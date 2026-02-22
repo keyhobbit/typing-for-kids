@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=KidTyping VN
+GenericName=Luyện Gõ Tiếng Việt
+Comment=Luyện gõ tiếng Việt cho bé – hỗ trợ Unikey và Bamboo
+Exec=/home/dragonshit/projects/typing-for-kids/kidtyping-gui
+Icon=/home/dragonshit/projects/typing-for-kids/static/icon.png
+Terminal=false
+Categories=Education;Utility;
+Keywords=typing;vietnamese;kids;tiengviet;
+StartupNotify=true

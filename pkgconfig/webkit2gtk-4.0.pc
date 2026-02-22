@@ -1,0 +1,4 @@
+Name: webkit2gtk-4.0
+Description: WebKit2 GTK+ – compat shim pointing at webkit2gtk-4.1
+Version: 4.1
+Requires: webkit2gtk-4.1

@@ -1,0 +1,17 @@
+# Compiled binaries
+kidtyping-vn
+kidtyping-gui
+
+# Runtime files
+.app.pid
+.app.log
+
+# Go build cache / test artifacts
+*.test
+*.out
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

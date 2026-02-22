@@ -1,0 +1,41 @@
+package main
+
+import (
+	"fmt"
+	"net"
+	"net/http"
+)
+
+// newServeMux builds the shared HTTP mux used by both the server and GUI binary.
+func newServeMux() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	fs := http.FileServer(http.Dir("./static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	mux.HandleFunc("/", handleIndex)
+	mux.HandleFunc("/api/next", handleNext)
+
+	return mux
+}
+
+// freePort returns a random available TCP port on localhost.
+func freePort() (int, error) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+	port := ln.Addr().(*net.TCPAddr).Port
+	ln.Close()
+	return port, nil
+}
+
+// startServer starts the HTTP server on the given port in a background goroutine.
+func startServer(port int) {
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	go func() {
+		if err := http.ListenAndServe(addr, newServeMux()); err != nil {
+			// Non-fatal in GUI mode – window close will end the process anyway.
+		}
+	}()
+}

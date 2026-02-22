@@ -1,0 +1,200 @@
+/* =========================================================
+   KidTyping VN – Kid-friendly stylesheet
+   ========================================================= */
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sky:    #38bdf8;
+  --sun:    #fbbf24;
+  --green:  #22c55e;
+  --red:    #ef4444;
+  --bg:     #f0f9ff;
+  --card:   #ffffff;
+  --text:   #1e293b;
+  --muted:  #64748b;
+  --radius: 1.25rem;
+  --shadow: 0 4px 24px rgba(0,0,0,.08);
+  --font:   'Nunito', 'Segoe UI', sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+}
+
+/* ---------- Header ---------- */
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+header h1 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 800;
+  color: var(--sky);
+  letter-spacing: -.5px;
+}
+header p {
+  color: var(--muted);
+  font-size: 1rem;
+  margin-top: .25rem;
+}
+
+/* ---------- Level selector ---------- */
+.levels {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.75rem;
+}
+.levels button {
+  padding: .55rem 1.4rem;
+  border: 2px solid var(--sky);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--sky);
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s, color .18s, transform .1s;
+}
+.levels button.active,
+.levels button:hover {
+  background: var(--sky);
+  color: #fff;
+}
+.levels button:active { transform: scale(.96); }
+
+/* ---------- Main card ---------- */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ---------- Target display ---------- */
+.target-label {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: .4rem;
+}
+#target-text {
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text);
+  min-height: 3.5rem;
+  word-break: break-word;
+  transition: opacity .3s;
+}
+#target-text.fade-out { opacity: 0; }
+#target-text.fade-in  { opacity: 1; }
+
+/* ---------- Input area ---------- */
+#typing-input {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  font-size: 1.6rem;
+  font-family: var(--font);
+  font-weight: 600;
+  padding: 1rem 1.2rem;
+  border: 3px solid #cbd5e1;
+  border-radius: var(--radius);
+  background: #f8fafc;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+#typing-input:focus           { border-color: var(--sky); box-shadow: 0 0 0 4px #bae6fd55; }
+#typing-input.correct         { border-color: var(--green); box-shadow: 0 0 0 4px #bbf7d055; }
+#typing-input.incorrect       { border-color: var(--red);   box-shadow: 0 0 0 4px #fecaca55; }
+
+/* ---------- Feedback message ---------- */
+#feedback {
+  min-height: 2rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-align: center;
+  transition: opacity .25s;
+}
+#feedback.correct   { color: var(--green); }
+#feedback.incorrect { color: var(--red);   }
+#feedback.hidden    { opacity: 0; }
+
+/* ---------- Action buttons ---------- */
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn {
+  padding: .75rem 2rem;
+  border: none;
+  border-radius: 99px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .1s, filter .15s;
+}
+.btn:active { transform: scale(.96); }
+.btn-sky    { background: var(--sky); color: #fff; }
+.btn-sky:hover { filter: brightness(1.08); }
+.btn-sun    { background: var(--sun); color: #1e293b; }
+.btn-sun:hover { filter: brightness(1.08); }
+
+/* ---------- Score counter ---------- */
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.score-row span { color: var(--text); }
+
+/* ---------- Hint (inline progress bar) ---------- */
+.progress-bar-wrap {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--sky), var(--green));
+  border-radius: 99px;
+  transition: width .2s ease;
+}
+
+/* ---------- Footer ---------- */
+footer {
+  margin-top: 2.5rem;
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 480px) {
+  .card { padding: 1.5rem 1rem; }
+  #typing-input { font-size: 1.2rem; }
+}
