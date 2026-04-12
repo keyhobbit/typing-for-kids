@@ -438,9 +438,11 @@ function showPage(which) {
   if (which === 'home') {
     pageHome.style.display = 'block';
     pageRank.style.display = 'none';
+    pageRank.classList.add('hidden');
     navHome.classList.add('active');
     navRank.classList.remove('active');
   } else {
+    pageRank.classList.remove('hidden');
     pageRank.style.display = 'block';
     pageHome.style.display = 'none';
     navRank.classList.add('active');
