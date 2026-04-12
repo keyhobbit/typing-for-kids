@@ -7,7 +7,7 @@
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/style.css?v=4" />
 </head>
 <body>
 
@@ -43,7 +43,7 @@
 </header>
 
 <!-- ── Modal overlay ── -->
-<div id="modal-overlay" class="hidden">
+<div id="modal-overlay" class="hidden" style="display:none">
   <div class="modal-box">
     <button id="modal-close" class="modal-close" aria-label="Đóng">✕</button>
     <div id="modal-body"></div>
@@ -108,7 +108,7 @@
 </main>
 
 <!-- ── RANKING PAGE ── -->
-<section id="page-rank" class="hidden">
+<section id="page-rank" class="hidden" style="display:none">
   <div class="rank-tabs" id="rank-tabs">
     <button class="rank-tab active" data-period="day">📅 Hôm nay</button>
     <button class="rank-tab" data-period="week">📆 Tuần này</button>
@@ -314,10 +314,11 @@ ddLogout.addEventListener('click', async () => {
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
-function closeModal() { modalOverlay.classList.add('hidden'); }
+function closeModal() { modalOverlay.style.display = 'none'; modalOverlay.classList.add('hidden'); }
 
 function openModal(html) {
   modalBody.innerHTML = html;
+  modalOverlay.style.display = 'flex';
   modalOverlay.classList.remove('hidden');
 }
 
@@ -433,18 +434,24 @@ async function doLogin() {
 // ═══════════════════════════════════════════════════════════════════════════
 // Navigation
 // ═══════════════════════════════════════════════════════════════════════════
-navHome.addEventListener('click', () => {
-  navHome.classList.add('active');
-  navRank.classList.remove('active');
-  pageHome.classList.remove('hidden');
-  pageRank.classList.add('hidden');
-});
+function showPage(which) {
+  if (which === 'home') {
+    pageHome.style.display = 'block';
+    pageRank.style.display = 'none';
+    navHome.classList.add('active');
+    navRank.classList.remove('active');
+  } else {
+    pageRank.style.display = 'block';
+    pageHome.style.display = 'none';
+    navRank.classList.add('active');
+    navHome.classList.remove('active');
+  }
+}
+
+navHome.addEventListener('click', () => showPage('home'));
 
 navRank.addEventListener('click', async () => {
-  navRank.classList.add('active');
-  navHome.classList.remove('active');
-  pageRank.classList.remove('hidden');
-  pageHome.classList.add('hidden');
+  showPage('rank');
   await loadRanking(rankPeriod);
 });
 
@@ -679,225 +686,6 @@ function setFeedback(msg, cls) {
 // Bootstrap
 // ═══════════════════════════════════════════════════════════════════════════
 initUser().then(() => inputEl.focus());
-</script>
-</body>
-</html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KidTyping VN – Luyện Gõ Tiếng Việt</title>
-  <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
-
-  <!-- Google Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- App stylesheet -->
-  <link rel="stylesheet" href="/static/css/style.css" />
-</head>
-<body>
-
-<header>
-  <h1>⌨️ KidTyping VN</h1>
-  <p>Luyện gõ Tiếng Việt – dùng Unikey hoặc Bamboo trên máy</p>
-</header>
-
-<!-- Level selector -->
-<div class="levels" id="level-buttons">
-  <button data-level="1" class="{{if eq .Level 1}}active{{end}}">Cấp 1 – Từ đơn</button>
-  <button data-level="2" class="{{if eq .Level 2}}active{{end}}">Cấp 2 – Cụm từ</button>
-  <button data-level="3" class="{{if eq .Level 3}}active{{end}}">Cấp 3 – Câu đầy đủ</button>
-  <button data-level="0">✍️ Gõ tự do</button>
-</div>
-
-<!-- Main card -->
-<div class="card">
-
-  <!-- Score row -->
-  <div class="score-row">
-    <div>Đúng: <span id="score-correct">0</span></div>
-    <div>Cấp: <span id="score-level">{{.Level}}</span></div>
-    <div>Tổng: <span id="score-total">0</span></div>
-  </div>
-
-  <!-- Progress bar -->
-  <div class="progress-bar-wrap"><div id="progress-bar"></div></div>
-
-  <!-- Target text -->
-  <div id="target-section">
-    <div class="target-label">Hãy gõ:</div>
-    <div id="target-text">{{.Lesson.Content}}</div>
-  </div>
-
-  <!-- Free-typing banner (hidden by default) -->
-  <div id="free-banner" style="display:none; text-align:center; padding: .5rem 0; color: var(--muted); font-size: .95rem;">
-    🎹 Chế độ gõ tự do – gõ bất cứ thứ gì bạn thích!
-  </div>
-
-  <!-- Input area -->
-  <textarea
-    id="typing-input"
-    placeholder="Gõ vào đây…"
-    autocomplete="off"
-    autocorrect="off"
-    autocapitalize="off"
-    spellcheck="false"
-  ></textarea>
-
-  <!-- Feedback -->
-  <div id="feedback" class="hidden"></div>
-
-  <!-- Buttons -->
-  <div class="actions">
-    <button class="btn btn-sky" id="btn-check">✅ Kiểm tra (Enter)</button>
-    <button class="btn btn-sun" id="btn-next">➡️ Bài tiếp theo</button>
-  </div>
-
-</div>
-
-<footer>KidTyping VN &copy; 2026 – Học vui, gõ giỏi!</footer>
-
-<!-- App logic – NO client-side Telex engine.
-     Vietnamese input is handled entirely by the OS IME (Unikey / Bamboo / iBus-Bamboo).
--->
-<script>
-  let currentLevel = {{.Level}};
-  let targetText   = {{jsStr .Lesson.Content}};
-  let correct = 0, total = 0;
-  let freeMode = false;
-
-  const targetEl       = document.getElementById('target-text');
-  const targetSection  = document.getElementById('target-section');
-  const inputEl        = document.getElementById('typing-input');
-  const feedbackEl     = document.getElementById('feedback');
-  const progressEl     = document.getElementById('progress-bar');
-  const scoreCorrectEl = document.getElementById('score-correct');
-  const scoreTotalEl   = document.getElementById('score-total');
-  const scoreLevelEl   = document.getElementById('score-level');
-  const btnCheck       = document.getElementById('btn-check');
-  const btnNext        = document.getElementById('btn-next');
-  const freeBanner     = document.getElementById('free-banner');
-
-  // ── Progress bar (character match) ──────────────────────────────────────
-  inputEl.addEventListener('input', () => {
-    if (freeMode) return;
-    const input  = inputEl.value;
-    const target = targetText;
-    let matched = 0;
-    for (let i = 0; i < Math.min(input.length, target.length); i++) {
-      if (input[i] === target[i]) matched++; else break;
-    }
-    const pct = target.length ? (matched / target.length) * 100 : 0;
-    progressEl.style.width = pct + '%';
-  });
-
-  // ── Enter → check (only in lesson mode) ─────────────────────────────────
-  inputEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey && !freeMode) {
-      e.preventDefault();
-      checkAnswer();
-    }
-  });
-
-  // ── Check answer ─────────────────────────────────────────────────────────
-  function checkAnswer() {
-    if (freeMode) return;
-    const input  = inputEl.value.trim().normalize('NFC');
-    const target = targetText.trim().normalize('NFC');
-    total++;
-    scoreTotalEl.textContent = total;
-
-    if (input === target) {
-      correct++;
-      scoreCorrectEl.textContent = correct;
-      setFeedback('🎉 Bravô! Chính xác!', 'correct');
-      inputEl.className = 'correct';
-    } else {
-      setFeedback('❌ Thử lại nhé! (Đúng: ' + targetText + ')', 'incorrect');
-      inputEl.className = 'incorrect';
-    }
-  }
-  btnCheck.addEventListener('click', checkAnswer);
-
-  // ── Next lesson ──────────────────────────────────────────────────────────
-  async function loadNext() {
-    if (freeMode) {
-      inputEl.value = '';
-      inputEl.className = '';
-      inputEl.focus();
-      return;
-    }
-    try {
-      const res  = await fetch('/api/next?level=' + currentLevel);
-      const data = await res.json();
-      targetText = data.content;
-
-      targetEl.classList.add('fade-out');
-      await sleep(200);
-      targetEl.textContent = targetText;
-      targetEl.classList.remove('fade-out');
-      targetEl.classList.add('fade-in');
-      setTimeout(() => targetEl.classList.remove('fade-in'), 300);
-
-      inputEl.value = '';
-      inputEl.className = '';
-      progressEl.style.width = '0%';
-      setFeedback('', 'hidden');
-      inputEl.focus();
-    } catch (err) {
-      console.error('Failed to load next lesson:', err);
-    }
-  }
-  btnNext.addEventListener('click', loadNext);
-
-  // ── Level buttons ────────────────────────────────────────────────────────
-  document.querySelectorAll('#level-buttons button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#level-buttons button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const lvl = parseInt(btn.dataset.level);
-
-      if (lvl === 0) {
-        // Free-typing mode
-        freeMode = true;
-        currentLevel = 0;
-        scoreLevelEl.textContent = '–';
-        targetSection.style.display  = 'none';
-        freeBanner.style.display     = 'block';
-        progressEl.style.width       = '0%';
-        btnCheck.disabled            = true;
-        btnCheck.style.opacity       = '0.4';
-        btnNext.textContent          = '🗑️ Xoá';
-        inputEl.value = '';
-        inputEl.className = '';
-        setFeedback('', 'hidden');
-        inputEl.placeholder = 'Gõ bất cứ thứ gì bạn muốn…';
-        inputEl.focus();
-      } else {
-        // Lesson mode
-        freeMode = false;
-        currentLevel = lvl;
-        scoreLevelEl.textContent    = lvl;
-        targetSection.style.display = 'block';
-        freeBanner.style.display    = 'none';
-        btnCheck.disabled           = false;
-        btnCheck.style.opacity      = '1';
-        btnNext.textContent         = '➡️ Bài tiếp theo';
-        inputEl.placeholder         = 'Gõ vào đây…';
-        loadNext();
-      }
-    });
-  });
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
-  function setFeedback(msg, cls) {
-    feedbackEl.textContent = msg;
-    feedbackEl.className   = cls;
-  }
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-  inputEl.focus();
 </script>
 </body>
 </html>
