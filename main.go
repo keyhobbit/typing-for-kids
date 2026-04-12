@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-	const port = 8700
+	const port = 11100
 	log.Printf("KidTyping VN – Listening on http://localhost:%d\n", port)
-	if err := http.ListenAndServe(":8700", newServeMux()); err != nil {
+	if err := http.ListenAndServe(":11100", newServeMux()); err != nil {
 		log.Fatal(err)
 	}
 }

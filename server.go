@@ -16,6 +16,19 @@ func newServeMux() *http.ServeMux {
 	mux.HandleFunc("/", handleIndex)
 	mux.HandleFunc("/api/next", handleNext)
 
+	// Auth
+	mux.HandleFunc("/api/auth/guest", handleAuthGuest)
+	mux.HandleFunc("/api/auth/register", handleRegister)
+	mux.HandleFunc("/api/auth/login", handleLogin)
+	mux.HandleFunc("/api/auth/logout", handleLogout)
+
+	// User management
+	mux.HandleFunc("/api/user/name", handleRename)
+
+	// Score & ranking
+	mux.HandleFunc("/api/score", handleScore)
+	mux.HandleFunc("/api/ranking", handleRanking)
+
 	return mux
 }
 

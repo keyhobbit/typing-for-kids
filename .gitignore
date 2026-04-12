@@ -1,10 +1,12 @@
 # Compiled binaries
 kidtyping-vn
 kidtyping-gui
+kidtyping-vn-linux
 
 # Runtime files
 .app.pid
 .app.log
+data.json
 
 # Go build cache / test artifacts
 *.test

@@ -5,6 +5,688 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KidTyping VN – Luyện Gõ Tiếng Việt</title>
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ── Firework overlay ── -->
+<canvas id="firework-canvas"></canvas>
+
+<!-- ── Header ── -->
+<header class="app-header">
+  <div class="header-brand">
+    <span>⌨️</span>
+    <span class="brand-name">KidTyping VN</span>
+  </div>
+  <nav class="header-nav">
+    <button id="nav-home" class="nav-btn active">🏠 Luyện Gõ</button>
+    <button id="nav-rank" class="nav-btn">🏆 Bảng XH</button>
+  </nav>
+  <div class="header-user">
+    <button id="user-btn" class="user-pill">
+      <span id="user-avatar">👤</span>
+      <span id="user-display-name" class="user-name-text">…</span>
+      <span>▾</span>
+    </button>
+    <div id="user-menu" class="user-menu hidden">
+      <button id="dd-rename">✏️ Đổi tên hiển thị</button>
+      <div id="dd-auth-section">
+        <div class="menu-divider"></div>
+        <button id="dd-register">📝 Đăng ký tài khoản</button>
+        <button id="dd-login">🔑 Đăng nhập</button>
+      </div>
+      <button id="dd-logout" style="display:none">🚪 Đăng xuất</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Modal overlay ── -->
+<div id="modal-overlay" class="hidden">
+  <div class="modal-box">
+    <button id="modal-close" class="modal-close" aria-label="Đóng">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ── HOME PAGE ── -->
+<main id="page-home">
+
+  <!-- Level selector -->
+  <div class="levels" id="level-buttons">
+    <button data-level="1" class="{{if eq .Level 1}}active{{end}}">Cấp 1 – Từ đơn</button>
+    <button data-level="2" class="{{if eq .Level 2}}active{{end}}">Cấp 2 – Cụm từ</button>
+    <button data-level="3" class="{{if eq .Level 3}}active{{end}}">Cấp 3 – Câu đầy đủ</button>
+    <button data-level="0">✍️ Gõ tự do</button>
+  </div>
+
+  <!-- Main card -->
+  <div class="card">
+
+    <!-- Score row -->
+    <div class="score-row">
+      <div>Đúng: <span id="score-correct">0</span></div>
+      <div>Cấp: <span id="score-level">{{.Level}}</span></div>
+      <div>Tổng: <span id="score-total">0</span></div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+    <!-- Target text -->
+    <div id="target-section">
+      <div class="target-label">Hãy gõ:</div>
+      <div id="target-text">{{.Lesson.Content}}</div>
+    </div>
+
+    <!-- Free-typing banner -->
+    <div id="free-banner" style="display:none; text-align:center; padding:.5rem 0; color:var(--muted); font-size:.95rem;">
+      🎹 Chế độ gõ tự do – gõ bất cứ thứ gì bạn thích!
+    </div>
+
+    <!-- Input area -->
+    <textarea
+      id="typing-input"
+      placeholder="Gõ vào đây…"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    ></textarea>
+
+    <!-- Feedback -->
+    <div id="feedback" class="hidden"></div>
+
+    <!-- Buttons -->
+    <div class="actions">
+      <button class="btn btn-sky" id="btn-check">✅ Kiểm tra (Enter)</button>
+      <button class="btn btn-sun" id="btn-next">➡️ Bài tiếp theo</button>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── RANKING PAGE ── -->
+<section id="page-rank" class="hidden">
+  <div class="rank-tabs" id="rank-tabs">
+    <button class="rank-tab active" data-period="day">📅 Hôm nay</button>
+    <button class="rank-tab" data-period="week">📆 Tuần này</button>
+    <button class="rank-tab" data-period="month">🗓️ Tháng này</button>
+    <button class="rank-tab" data-period="year">📊 Năm nay</button>
+  </div>
+  <div class="rank-card">
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th style="width:60px">Hạng</th>
+          <th>Người chơi</th>
+          <th style="text-align:right">Điểm</th>
+        </tr>
+      </thead>
+      <tbody id="rank-body">
+        <tr><td colspan="3" class="rank-empty">Đang tải…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>KidTyping VN © 2026 – Học vui, gõ giỏi!</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Constants & state
+// ═══════════════════════════════════════════════════════════════════════════
+const DEVICE_KEY = 'kt_device_id';
+const TOKEN_KEY  = 'kt_token';
+const USER_KEY   = 'kt_user';
+
+let curUser  = null;   // {id, name, is_guest}
+let curToken = null;
+let currentLevel = {{.Level}};
+let targetText   = {{jsStr .Lesson.Content}};
+let correct = 0, total = 0;
+let freeMode = false;
+let rankPeriod = 'day';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DOM refs
+// ═══════════════════════════════════════════════════════════════════════════
+const targetEl        = document.getElementById('target-text');
+const targetSection   = document.getElementById('target-section');
+const inputEl         = document.getElementById('typing-input');
+const feedbackEl      = document.getElementById('feedback');
+const progressEl      = document.getElementById('progress-bar');
+const scoreCorrectEl  = document.getElementById('score-correct');
+const scoreTotalEl    = document.getElementById('score-total');
+const scoreLevelEl    = document.getElementById('score-level');
+const btnCheck        = document.getElementById('btn-check');
+const btnNext         = document.getElementById('btn-next');
+const freeBanner      = document.getElementById('free-banner');
+const userBtn         = document.getElementById('user-btn');
+const userMenu        = document.getElementById('user-menu');
+const userDisplayName = document.getElementById('user-display-name');
+const userAvatar      = document.getElementById('user-avatar');
+const ddAuthSection   = document.getElementById('dd-auth-section');
+const ddLogout        = document.getElementById('dd-logout');
+const ddRename        = document.getElementById('dd-rename');
+const ddRegister      = document.getElementById('dd-register');
+const ddLogin         = document.getElementById('dd-login');
+const navHome         = document.getElementById('nav-home');
+const navRank         = document.getElementById('nav-rank');
+const pageHome        = document.getElementById('page-home');
+const pageRank        = document.getElementById('page-rank');
+const modalOverlay    = document.getElementById('modal-overlay');
+const modalBody       = document.getElementById('modal-body');
+const modalClose      = document.getElementById('modal-close');
+const rankBody        = document.getElementById('rank-body');
+const fwCanvas        = document.getElementById('firework-canvas');
+const fwCtx           = fwCanvas.getContext('2d');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  const headers = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
+  if (curToken) headers['Authorization'] = 'Bearer ' + curToken;
+  return fetch(path, Object.assign({}, opts, {headers}));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// User / Auth
+// ═══════════════════════════════════════════════════════════════════════════
+async function initUser() {
+  let deviceID = localStorage.getItem(DEVICE_KEY);
+  if (!deviceID) {
+    deviceID = generateUUID();
+    localStorage.setItem(DEVICE_KEY, deviceID);
+  }
+
+  const savedToken = localStorage.getItem(TOKEN_KEY);
+  const savedUser  = localStorage.getItem(USER_KEY);
+  if (savedToken && savedUser) {
+    try {
+      curToken = savedToken;
+      curUser  = JSON.parse(savedUser);
+      updateUserUI();
+      return;
+    } catch (_) { /* fall through */ }
+  }
+
+  try {
+    const res  = await fetch('/api/auth/guest', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({device_id: deviceID}),
+    });
+    const data = await res.json();
+    curUser  = data.user;
+    curToken = data.token;
+    saveSession();
+  } catch (e) {
+    console.error('Failed to init user:', e);
+    // Offline fallback: show partial name from device_id
+    curUser = {id: deviceID, name: deviceID.slice(0, 10), is_guest: true};
+  }
+  updateUserUI();
+}
+
+function saveSession() {
+  localStorage.setItem(TOKEN_KEY, curToken || '');
+  localStorage.setItem(USER_KEY, JSON.stringify(curUser));
+}
+
+function clearSession() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  curToken = null;
+  curUser  = null;
+}
+
+function updateUserUI() {
+  if (!curUser) return;
+  userDisplayName.textContent = curUser.name;
+  userAvatar.textContent = curUser.is_guest ? '👤' : '😊';
+  ddAuthSection.style.display = curUser.is_guest ? 'block' : 'none';
+  ddLogout.style.display      = curUser.is_guest ? 'none'  : 'block';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// User dropdown
+// ═══════════════════════════════════════════════════════════════════════════
+userBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  userMenu.classList.toggle('hidden');
+});
+document.addEventListener('click', () => userMenu.classList.add('hidden'));
+userMenu.addEventListener('click', e => e.stopPropagation());
+
+ddRename.addEventListener('click', () => {
+  userMenu.classList.add('hidden');
+  showRenameModal();
+});
+ddRegister.addEventListener('click', () => {
+  userMenu.classList.add('hidden');
+  showRegisterModal();
+});
+ddLogin.addEventListener('click', () => {
+  userMenu.classList.add('hidden');
+  showLoginModal();
+});
+ddLogout.addEventListener('click', async () => {
+  userMenu.classList.add('hidden');
+  try { await apiFetch('/api/auth/logout', {method: 'POST'}); } catch (_) {}
+  clearSession();
+  const deviceID = localStorage.getItem(DEVICE_KEY) || generateUUID();
+  try {
+    const res  = await fetch('/api/auth/guest', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({device_id: deviceID}),
+    });
+    const data = await res.json();
+    curUser  = data.user;
+    curToken = data.token;
+    saveSession();
+    updateUserUI();
+  } catch (e) { console.error(e); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Modals
+// ═══════════════════════════════════════════════════════════════════════════
+modalClose.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+
+function closeModal() { modalOverlay.classList.add('hidden'); }
+
+function openModal(html) {
+  modalBody.innerHTML = html;
+  modalOverlay.classList.remove('hidden');
+}
+
+function showRenameModal() {
+  openModal(
+    '<div class="modal-title">✏️ Đổi tên hiển thị</div>' +
+    '<div class="modal-field"><label>Tên hiển thị mới</label>' +
+    '<input id="m-name" type="text" maxlength="20" placeholder="Nhập tên…" value="' +
+      escHtml(curUser ? curUser.name : '') + '" /></div>' +
+    '<div class="modal-error" id="m-err"></div>' +
+    '<div class="modal-actions"><button class="btn btn-sky" id="m-save">💾 Lưu</button></div>'
+  );
+  const inp = document.getElementById('m-name');
+  inp.focus(); inp.select();
+  const save = () => doRename(document.getElementById('m-name').value.trim());
+  document.getElementById('m-save').addEventListener('click', save);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
+}
+
+async function doRename(name) {
+  const errEl = document.getElementById('m-err');
+  if (!name) { errEl.textContent = 'Tên không được để trống'; return; }
+  try {
+    const res  = await apiFetch('/api/user/name', {method: 'PUT', body: JSON.stringify({name})});
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Lỗi'; return; }
+    curUser = data.user;
+    saveSession();
+    updateUserUI();
+    closeModal();
+  } catch (e) { errEl.textContent = 'Lỗi kết nối'; }
+}
+
+function showRegisterModal() {
+  openModal(
+    '<div class="modal-title">📝 Đăng ký tài khoản</div>' +
+    '<div class="modal-field"><label>Tên đăng nhập</label>' +
+    '<input id="m-user" type="text" maxlength="20" placeholder="Không có khoảng trắng" autocomplete="username" /></div>' +
+    '<div class="modal-field"><label>Mật khẩu</label>' +
+    '<input id="m-pass" type="password" maxlength="64" placeholder="Ít nhất 4 ký tự" autocomplete="new-password" /></div>' +
+    '<div class="modal-error" id="m-err"></div>' +
+    '<div class="modal-actions"><button class="btn btn-sky" id="m-save">📝 Đăng ký</button></div>' +
+    '<p class="modal-hint">Đã có tài khoản? <a id="m-switch" tabindex="0">Đăng nhập</a></p>'
+  );
+  document.getElementById('m-user').focus();
+  document.getElementById('m-switch').addEventListener('click', showLoginModal);
+  document.getElementById('m-save').addEventListener('click', doRegister);
+  document.getElementById('m-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+}
+
+async function doRegister() {
+  const username = document.getElementById('m-user').value.trim();
+  const password = document.getElementById('m-pass').value;
+  const errEl = document.getElementById('m-err');
+  if (!username) { errEl.textContent = 'Vui lòng nhập tên đăng nhập'; return; }
+  if (/\s/.test(username)) { errEl.textContent = 'Tên đăng nhập không được có khoảng trắng'; return; }
+  if (password.length < 4) { errEl.textContent = 'Mật khẩu phải có ít nhất 4 ký tự'; return; }
+  const deviceID = localStorage.getItem(DEVICE_KEY) || generateUUID();
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({device_id: deviceID, username, password}),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Lỗi'; return; }
+    curUser  = data.user;
+    curToken = data.token;
+    saveSession();
+    updateUserUI();
+    closeModal();
+  } catch (e) { errEl.textContent = 'Lỗi kết nối'; }
+}
+
+function showLoginModal() {
+  openModal(
+    '<div class="modal-title">🔑 Đăng nhập</div>' +
+    '<div class="modal-field"><label>Tên đăng nhập</label>' +
+    '<input id="m-user" type="text" maxlength="20" placeholder="Tên đăng nhập" autocomplete="username" /></div>' +
+    '<div class="modal-field"><label>Mật khẩu</label>' +
+    '<input id="m-pass" type="password" maxlength="64" placeholder="Mật khẩu" autocomplete="current-password" /></div>' +
+    '<div class="modal-error" id="m-err"></div>' +
+    '<div class="modal-actions"><button class="btn btn-sky" id="m-save">🔑 Đăng nhập</button></div>' +
+    '<p class="modal-hint">Chưa có tài khoản? <a id="m-switch" tabindex="0">Đăng ký</a></p>'
+  );
+  document.getElementById('m-user').focus();
+  document.getElementById('m-switch').addEventListener('click', showRegisterModal);
+  document.getElementById('m-save').addEventListener('click', doLogin);
+  document.getElementById('m-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+}
+
+async function doLogin() {
+  const username = document.getElementById('m-user').value.trim();
+  const password = document.getElementById('m-pass').value;
+  const errEl = document.getElementById('m-err');
+  if (!username || !password) { errEl.textContent = 'Vui lòng điền đầy đủ thông tin'; return; }
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Sai mật khẩu'; return; }
+    curUser  = data.user;
+    curToken = data.token;
+    saveSession();
+    updateUserUI();
+    closeModal();
+  } catch (e) { errEl.textContent = 'Lỗi kết nối'; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Navigation
+// ═══════════════════════════════════════════════════════════════════════════
+navHome.addEventListener('click', () => {
+  navHome.classList.add('active');
+  navRank.classList.remove('active');
+  pageHome.classList.remove('hidden');
+  pageRank.classList.add('hidden');
+});
+
+navRank.addEventListener('click', async () => {
+  navRank.classList.add('active');
+  navHome.classList.remove('active');
+  pageRank.classList.remove('hidden');
+  pageHome.classList.add('hidden');
+  await loadRanking(rankPeriod);
+});
+
+document.querySelectorAll('#rank-tabs .rank-tab').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('#rank-tabs .rank-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rankPeriod = btn.dataset.period;
+    await loadRanking(rankPeriod);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Ranking
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadRanking(period) {
+  rankBody.innerHTML = '<tr><td colspan="3" class="rank-empty">Đang tải…</td></tr>';
+  try {
+    const res     = await fetch('/api/ranking?period=' + period);
+    const entries = await res.json();
+    if (!entries || entries.length === 0) {
+      rankBody.innerHTML = '<tr><td colspan="3" class="rank-empty">Chưa có điểm số trong khoảng thời gian này 🕹️</td></tr>';
+      return;
+    }
+    const medals = ['🥇', '🥈', '🥉'];
+    let html = '';
+    for (const e of entries) {
+      const isCurrent = curUser && e.user_id === curUser.id;
+      const medal     = e.rank <= 3 ? medals[e.rank - 1] : String(e.rank);
+      const guestTag  = e.is_guest ? ' <small style="color:var(--muted)">(khách)</small>' : '';
+      html += '<tr' + (isCurrent ? ' class="current-user"' : '') + '>' +
+        '<td class="rank-medal">' + medal + '</td>' +
+        '<td>' + escHtml(e.name) + guestTag + '</td>' +
+        '<td class="rank-score" style="text-align:right">' + e.score + '</td>' +
+        '</tr>';
+    }
+    rankBody.innerHTML = html;
+  } catch (e) {
+    rankBody.innerHTML = '<tr><td colspan="3" class="rank-empty">Lỗi tải bảng xếp hạng 😕</td></tr>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Firework
+// ═══════════════════════════════════════════════════════════════════════════
+let fwParticles = [];
+let fwRAF = null;
+
+function resizeFW() {
+  fwCanvas.width  = window.innerWidth;
+  fwCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeFW);
+resizeFW();
+
+function launchFirework() {
+  resizeFW();
+  fwCanvas.style.display = 'block';
+  fwParticles = [];
+  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#f783ac','#e599f7','#74c0fc'];
+  const W = fwCanvas.width, H = fwCanvas.height;
+  const origins = [
+    {x: W * 0.5, y: H * 0.38},
+    {x: W * 0.28, y: H * 0.48},
+    {x: W * 0.72, y: H * 0.48},
+  ];
+  for (const o of origins) {
+    for (let i = 0; i < 50; i++) {
+      const angle = (Math.PI * 2 / 50) * i + (Math.random() - 0.5) * 0.25;
+      const speed = 3 + Math.random() * 8;
+      fwParticles.push({
+        x: o.x, y: o.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2.5,
+        alpha: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 4 + Math.random() * 5,
+        decay: 0.020 + Math.random() * 0.010,
+        gravity: 0.15,
+      });
+    }
+  }
+  if (fwRAF) cancelAnimationFrame(fwRAF);
+  animateFW();
+}
+
+function animateFW() {
+  fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+  fwParticles = fwParticles.filter(p => p.alpha > 0.02);
+  for (const p of fwParticles) {
+    p.vx *= 0.98; p.vy = p.vy * 0.98 + p.gravity;
+    p.x += p.vx;  p.y += p.vy;
+    p.alpha -= p.decay;
+    fwCtx.globalAlpha = p.alpha;
+    fwCtx.fillStyle   = p.color;
+    fwCtx.beginPath();
+    fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    fwCtx.fill();
+  }
+  fwCtx.globalAlpha = 1;
+  if (fwParticles.length > 0) {
+    fwRAF = requestAnimationFrame(animateFW);
+  } else {
+    fwCanvas.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Game logic
+// ═══════════════════════════════════════════════════════════════════════════
+inputEl.addEventListener('input', () => {
+  if (freeMode) return;
+  const input = inputEl.value, target = targetText;
+  let matched = 0;
+  for (let i = 0; i < Math.min(input.length, target.length); i++) {
+    if (input[i] === target[i]) matched++; else break;
+  }
+  progressEl.style.width = (target.length ? (matched / target.length) * 100 : 0) + '%';
+});
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && !freeMode) {
+    e.preventDefault();
+    checkAnswer();
+  }
+});
+
+async function checkAnswer() {
+  if (freeMode) return;
+  const input  = inputEl.value.trim().normalize('NFC');
+  const target = targetText.trim().normalize('NFC');
+  total++;
+  scoreTotalEl.textContent = total;
+
+  if (input === target) {
+    correct++;
+    scoreCorrectEl.textContent = correct;
+    inputEl.className = 'correct';
+    setFeedback('🎉 Bravô! Chính xác! Sang bài tiếp theo…', 'correct');
+
+    // Submit score (fire-and-forget)
+    if (curToken) {
+      apiFetch('/api/score', {
+        method: 'POST',
+        body: JSON.stringify({correct: 1, total: 1, level: currentLevel}),
+      }).catch(() => {});
+    }
+
+    launchFirework();
+    inputEl.disabled  = true;
+    btnCheck.disabled = true;
+    await sleep(2000);
+    inputEl.disabled  = false;
+    btnCheck.disabled = false;
+    await loadNext();
+
+  } else {
+    inputEl.className = 'incorrect';
+    inputEl.classList.add('shake');
+    setTimeout(() => inputEl.classList.remove('shake'), 500);
+    setFeedback('😢 Thử lại nhé!  Đúng: ' + targetText, 'incorrect');
+    inputEl.focus();
+  }
+}
+btnCheck.addEventListener('click', checkAnswer);
+
+async function loadNext() {
+  if (freeMode) {
+    inputEl.value = '';
+    inputEl.className = '';
+    inputEl.focus();
+    return;
+  }
+  try {
+    const res  = await fetch('/api/next?level=' + currentLevel);
+    const data = await res.json();
+    targetText = data.content;
+
+    targetEl.classList.add('fade-out');
+    await sleep(200);
+    targetEl.textContent = targetText;
+    targetEl.classList.remove('fade-out');
+    targetEl.classList.add('fade-in');
+    setTimeout(() => targetEl.classList.remove('fade-in'), 300);
+
+    inputEl.value = '';
+    inputEl.className = '';
+    progressEl.style.width = '0%';
+    setFeedback('', 'hidden');
+    inputEl.focus();
+  } catch (err) {
+    console.error('Failed to load next lesson:', err);
+  }
+}
+btnNext.addEventListener('click', loadNext);
+
+document.querySelectorAll('#level-buttons button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#level-buttons button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const lvl = parseInt(btn.dataset.level);
+
+    if (lvl === 0) {
+      freeMode = true; currentLevel = 0;
+      scoreLevelEl.textContent = '–';
+      targetSection.style.display = 'none'; freeBanner.style.display = 'block';
+      progressEl.style.width = '0%';
+      btnCheck.disabled = true; btnCheck.style.opacity = '0.4';
+      btnNext.textContent = '🗑️ Xoá';
+      inputEl.value = ''; inputEl.className = '';
+      setFeedback('', 'hidden');
+      inputEl.placeholder = 'Gõ bất cứ thứ gì bạn muốn…';
+      inputEl.focus();
+    } else {
+      freeMode = false; currentLevel = lvl;
+      scoreLevelEl.textContent = lvl;
+      targetSection.style.display = 'block'; freeBanner.style.display = 'none';
+      btnCheck.disabled = false; btnCheck.style.opacity = '1';
+      btnNext.textContent = '➡️ Bài tiếp theo';
+      inputEl.placeholder = 'Gõ vào đây…';
+      loadNext();
+    }
+  });
+});
+
+function setFeedback(msg, cls) {
+  feedbackEl.textContent = msg;
+  feedbackEl.className   = cls;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Bootstrap
+// ═══════════════════════════════════════════════════════════════════════════
+initUser().then(() => inputEl.focus());
+</script>
+</body>
+</html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KidTyping VN – Luyện Gõ Tiếng Việt</title>
+  <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
 
   <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />

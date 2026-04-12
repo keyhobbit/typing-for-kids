@@ -30,22 +30,101 @@ body {
   padding: 2rem 1rem;
 }
 
-/* ---------- Header ---------- */
-header {
-  text-align: center;
-  margin-bottom: 2rem;
+/* ---------- Header (app navigation bar) ---------- */
+.app-header {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
-header h1 {
-  font-size: clamp(1.8rem, 5vw, 2.6rem);
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--sky);
-  letter-spacing: -.5px;
+  white-space: nowrap;
 }
-header p {
+.brand-name { letter-spacing: -.3px; }
+.header-nav {
+  display: flex;
+  gap: .5rem;
+}
+.nav-btn {
+  padding: .4rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background: transparent;
   color: var(--muted);
-  font-size: 1rem;
-  margin-top: .25rem;
+  font-size: .9rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .18s;
 }
+.nav-btn.active,
+.nav-btn:hover {
+  border-color: var(--sky);
+  color: var(--sky);
+}
+.header-user { position: relative; }
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem 1rem;
+  background: var(--sky);
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  font-size: .9rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: filter .15s;
+  max-width: 200px;
+}
+.user-pill:hover { filter: brightness(1.1); }
+.user-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+.user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  padding: .5rem;
+  min-width: 200px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+.user-menu button {
+  width: 100%;
+  padding: .55rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: .5rem;
+  text-align: left;
+  font-size: .9rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background .15s;
+  color: var(--text);
+}
+.user-menu button:hover { background: #f0f9ff; }
+.menu-divider { height: 1px; background: #e2e8f0; margin: .3rem 0; }
 
 /* ---------- Level selector ---------- */
 .levels {
@@ -193,8 +272,186 @@ footer {
   font-size: .8rem;
 }
 
+/* ---------- Page containers ---------- */
+#page-home {
+  width: 100%;
+  max-width: 680px;
+}
+#page-rank {
+  width: 100%;
+  max-width: 680px;
+}
+
+/* ---------- Modal ---------- */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-box {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 16px 48px rgba(0,0,0,.2);
+}
+.modal-close {
+  position: absolute;
+  top: .9rem;
+  right: .9rem;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--muted);
+  padding: .3rem .5rem;
+  border-radius: 50%;
+  line-height: 1;
+  transition: background .15s;
+}
+.modal-close:hover { background: #f1f5f9; }
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 1.1rem;
+  color: var(--text);
+}
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  margin-bottom: .85rem;
+}
+.modal-field label {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.modal-field input {
+  padding: .65rem 1rem;
+  border: 2px solid #cbd5e1;
+  border-radius: .75rem;
+  font-size: 1rem;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color .2s;
+}
+.modal-field input:focus { border-color: var(--sky); }
+.modal-error {
+  color: var(--red);
+  font-size: .88rem;
+  font-weight: 600;
+  margin-bottom: .7rem;
+  min-height: 1.2rem;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.modal-hint {
+  font-size: .82rem;
+  color: var(--muted);
+  margin-top: .8rem;
+  text-align: center;
+}
+.modal-hint a {
+  color: var(--sky);
+  cursor: pointer;
+  font-weight: 700;
+  text-decoration: none;
+}
+.modal-hint a:hover { text-decoration: underline; }
+
+/* ---------- Ranking page ---------- */
+.rank-tabs {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+.rank-tab {
+  padding: .42rem 1.1rem;
+  border: 2px solid var(--sky);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--sky);
+  font-size: .88rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .18s;
+}
+.rank-tab.active {
+  background: var(--sky);
+  color: #fff;
+}
+.rank-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.rank-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rank-table th {
+  padding: .7rem 1.2rem;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left;
+}
+.rank-table td {
+  padding: .8rem 1.2rem;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid #f1f5f9;
+}
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-table tr.current-user  { background: #f0f9ff; }
+.rank-medal  { font-size: 1.1rem; }
+.rank-score  { font-weight: 800; color: var(--sky); }
+.rank-empty  { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 1rem; }
+
+/* ---------- Firework overlay ---------- */
+#firework-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+  display: none;
+}
+
+/* ---------- Shake animation (incorrect answer) ---------- */
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  15%       { transform: translateX(-8px) rotate(-2deg); }
+  35%       { transform: translateX(8px)  rotate(2deg); }
+  55%       { transform: translateX(-5px) rotate(-1deg); }
+  75%       { transform: translateX(5px)  rotate(1deg); }
+}
+.shake { animation: shake .45s ease; }
+
 /* ---------- Responsive tweaks ---------- */
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .card { padding: 1.5rem 1rem; }
   #typing-input { font-size: 1.2rem; }
+  .app-header { gap: .5rem; }
+  .brand-name { display: none; }
+  .nav-btn { padding: .4rem .75rem; font-size: .82rem; }
 }
