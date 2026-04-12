@@ -43,7 +43,7 @@ func rebuildPeriod(period string, cutoff time.Time) error {
 		GROUP BY u.id
 		ORDER BY score DESC
 		LIMIT 100
-	`, cutoff.Format("2006-01-02T15:04:05"))
+\t`, cutoff.Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return err
 	}

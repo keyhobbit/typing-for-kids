@@ -66,7 +66,7 @@ func migrateFromJSON() {
 			tx.Exec(
 				`INSERT OR IGNORE INTO scores(id,user_id,points,level,scored_at)
 				 VALUES(?,?,1,?,?)`,
-				s.ID+"-"+itoa(i), s.UserID, s.Level, s.ScoredAt.UTC(),
+				s.ID+"-"+itoa(i), s.UserID, s.Level, s.ScoredAt.UTC().Format("2006-01-02 15:04:05"),
 			)
 		}
 	}
