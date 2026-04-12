@@ -81,7 +81,11 @@ func handleAuthGuest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	u := GetOrCreateGuest(body.DeviceID)
+	u, err := GetOrCreateGuest(body.DeviceID)
+	if err != nil {
+		writeJSONError(w, "lỗi hệ thống", http.StatusInternalServerError)
+		return
+	}
 	token := NewToken(u.ID)
 	writeJSON(w, map[string]any{"user": publicUser(u), "token": token})
 }
@@ -189,11 +193,11 @@ func handleScore(w http.ResponseWriter, r *http.Request) {
 		Total   int `json:"total"`
 		Level   int `json:"level"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Correct < 0 || body.Total < 0 {
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Level < 1 {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	AddScore(userID, body.Correct, body.Total, body.Level)
+	AddScore(userID, body.Level)
 	writeJSON(w, map[string]any{"ok": true})
 }
 

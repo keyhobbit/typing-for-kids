@@ -2,37 +2,33 @@ package main
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
-	"sync"
 )
 
-var (
-	tokenMu sync.RWMutex
-	tokens  = make(map[string]string) // Bearer token → userID
-)
-
-// NewToken creates a random token and maps it to the given userID.
+// NewToken creates a random token, persists it to the sessions table, and returns it.
 func NewToken(userID string) string {
 	b := make([]byte, 20)
 	_, _ = rand.Read(b)
 	token := hex.EncodeToString(b)
-	tokenMu.Lock()
-	tokens[token] = userID
-	tokenMu.Unlock()
+	db.Exec(
+		`INSERT OR IGNORE INTO sessions(token,user_id,created_at) VALUES(?,?,datetime('now'))`,
+		token, userID,
+	)
 	return token
 }
 
-// ResolveToken returns the userID for a valid token.
+// ResolveToken returns the userID for a valid token, or ("", false) if unknown.
 func ResolveToken(token string) (string, bool) {
-	tokenMu.RLock()
-	id, ok := tokens[token]
-	tokenMu.RUnlock()
-	return id, ok
+	var userID string
+	err := db.QueryRow(`SELECT user_id FROM sessions WHERE token=?`, token).Scan(&userID)
+	if err == sql.ErrNoRows || err != nil {
+		return "", false
+	}
+	return userID, true
 }
 
-// RevokeToken deletes a token (logout).
+// RevokeToken removes a session (logout).
 func RevokeToken(token string) {
-	tokenMu.Lock()
-	delete(tokens, token)
-	tokenMu.Unlock()
+	db.Exec(`DELETE FROM sessions WHERE token=?`, token)
 }
