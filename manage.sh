@@ -12,7 +12,7 @@ BINARY="$APP_DIR/$APP_NAME"
 GUI_BINARY="$APP_DIR/kidtyping-gui"
 DESKTOP_FILE="$APP_DIR/kidtyping-vn.desktop"
 PKG_CFG="$APP_DIR/pkgconfig"
-PORT=8700
+PORT=11100
 
 # ── Colours ────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
