@@ -1,0 +1,25 @@
+services:
+  kidtyping:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kidtyping-vn:latest
+    container_name: kidtyping-vn
+    restart: unless-stopped
+    ports:
+      - "11100:11100"
+    environment:
+      - DB_PATH=/data/kidtyping.db
+    volumes:
+      # Persist the SQLite database across container restarts/upgrades
+      - kidtyping_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:11100/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  kidtyping_data:
+    driver: local

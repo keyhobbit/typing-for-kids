@@ -3,17 +3,23 @@ package main
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	_ "modernc.org/sqlite"
 )
 
 var db *sql.DB
 
-const dbFile = "kidtyping.db"
+func dbFile() string {
+	if p := os.Getenv("DB_PATH"); p != "" {
+		return p
+	}
+	return "kidtyping.db"
+}
 
 func initDB() {
 	var err error
-	db, err = sql.Open("sqlite", dbFile+"?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on")
+	db, err = sql.Open("sqlite", dbFile()+"?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on")
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 	}

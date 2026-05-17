@@ -30,9 +30,11 @@ Runs as either a **native desktop window** (no browser needed) or a classic **we
 | Layer | Technology |
 |-------|-----------|
 | Backend | Go 1.22+ · `net/http` · `html/template` |
+| Database | SQLite (`modernc.org/sqlite` – pure Go, no CGO) |
 | Frontend | HTML5 · CSS3 (Tailwind-inspired custom CSS) · Vanilla JavaScript |
 | Native GUI | [`webview_go`](https://github.com/webview/webview_go) (WebKit2GTK) |
-| Port (server mode) | 8700 (server) / random localhost port (GUI mode) |
+| Port (server mode) | 11100 |
+| Container | Docker + Docker Compose |
 
 ---
 
@@ -44,8 +46,15 @@ Runs as either a **native desktop window** (no browser needed) or a classic **we
 ├── main_gui.go          # GUI entry point     (build tag:  gui)
 ├── server.go            # Shared HTTP mux, freePort(), startServer()
 ├── handlers.go          # HTTP handlers: page render + /api/next JSON
+├── db.go                # SQLite init, schema, DB_PATH env support
+├── auth.go              # Token-based session helpers
+├── ranker.go            # Score & ranking cache logic
+├── migrate.go           # One-time JSON → SQLite migration
 ├── dictionary.go        # Vietnamese lesson bank + GetRandomLesson()
 ├── manage.sh            # CLI tool: start / stop / restart / gui / install
+├── Dockerfile           # Multi-stage Docker build (pure Go, no CGO)
+├── docker-compose.yml   # Single-service Compose setup with SQLite volume
+├── .dockerignore        # Files excluded from Docker build context
 ├── kidtyping-vn.desktop # GNOME desktop entry
 ├── pkgconfig/
 │   └── webkit2gtk-4.0.pc  # pkg-config shim (4.0 → 4.1)
@@ -68,6 +77,9 @@ Runs as either a **native desktop window** (no browser needed) or a classic **we
 sudo apt install build-essential libwebkit2gtk-4.1-dev libgtk-3-dev pkg-config
 ```
 
+### Docker / Docker Compose
+- Docker 24+ and Docker Compose v2
+
 ---
 
 ## Quick Start
@@ -76,11 +88,17 @@ sudo apt install build-essential libwebkit2gtk-4.1-dev libgtk-3-dev pkg-config
 # Clone / enter the project
 cd typing-for-kids
 
-# ── Option A: Native desktop window (recommended) ──
-./manage.sh gui          # builds & opens a native window automatically
+# ── Option A: Docker (recommended for servers / CI) ──────────────────────────
+docker compose up -d          # builds image, starts container on port 11100
+docker compose logs -f        # follow logs
+docker compose down           # stop (data volume preserved)
+docker compose down -v        # stop AND delete the database volume
 
-# ── Option B: Web server (open http://localhost:8700 in any browser) ──
-./manage.sh start
+# ── Option B: Native desktop window ──────────────────────────────────────────
+./manage.sh gui               # builds & opens a native window automatically
+
+# ── Option C: Web server (plain Go) ──────────────────────────────────────────
+./manage.sh start             # http://localhost:11100
 ```
 
 ### Install desktop shortcut (GNOME)
@@ -130,6 +148,34 @@ produced by the OS-level IME:
 | **iBus-Unikey** | `sudo apt install ibus-unikey` |
 
 Set the input method to **Telex** or **VNI** in your IME settings before practicing.
+
+---
+
+## Docker Reference
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_PATH` | `kidtyping.db` | Path to the SQLite database file |
+
+### Volume
+
+The named volume `kidtyping_data` is mounted at `/data` inside the container.  
+The database is stored at `/data/kidtyping.db` and survives container restarts and image upgrades.
+
+### Image Build
+
+```bash
+# Build image only (no Compose)
+docker build -t kidtyping-vn .
+
+# Run manually
+docker run -d -p 11100:11100 \
+  -v kidtyping_data:/data \
+  -e DB_PATH=/data/kidtyping.db \
+  --name kidtyping-vn kidtyping-vn
+```
 
 ---
 

@@ -1,0 +1,9 @@
+.git
+.gitignore
+*.md
+kidtyping.db
+kidtyping-server
+kidtyping-gui
+.app.pid
+.app.log
+pkgconfig/
