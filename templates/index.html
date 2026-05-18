@@ -7,7 +7,7 @@
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=4" />
+  <link rel="stylesheet" href="/static/css/style.css?v=5" />
 </head>
 <body>
 
@@ -69,6 +69,8 @@
       <div>Đúng: <span id="score-correct">0</span></div>
       <div>Cấp: <span id="score-level">{{.Level}}</span></div>
       <div>Tổng: <span id="score-total">0</span></div>
+      <div>WPM: <span id="score-wpm">–</span></div>
+      <div>⏱ <span id="score-timer">0:00</span></div>
     </div>
 
     <!-- Progress bar -->
@@ -149,6 +151,11 @@ let correct = 0, total = 0;
 let freeMode = false;
 let rankPeriod = 'day';
 
+// ── Timing & WPM ──
+let wordStartTime  = null;  // ms timestamp when current word typing began
+let sessionStart   = null;  // ms timestamp of first keystroke in session
+let sessionTimerID = null;  // setInterval id
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DOM refs
 // ═══════════════════════════════════════════════════════════════════════════
@@ -160,6 +167,8 @@ const progressEl      = document.getElementById('progress-bar');
 const scoreCorrectEl  = document.getElementById('score-correct');
 const scoreTotalEl    = document.getElementById('score-total');
 const scoreLevelEl    = document.getElementById('score-level');
+const scoreWpmEl      = document.getElementById('score-wpm');
+const scoreTimerEl    = document.getElementById('score-timer');
 const btnCheck        = document.getElementById('btn-check');
 const btnNext         = document.getElementById('btn-next');
 const freeBanner      = document.getElementById('free-banner');
@@ -187,6 +196,25 @@ const fwCtx           = fwCanvas.getContext('2d');
 // Utilities
 // ═══════════════════════════════════════════════════════════════════════════
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Session timer helpers ──
+function startSessionTimer() {
+  if (sessionTimerID) return;
+  sessionStart = sessionStart || Date.now();
+  sessionTimerID = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    scoreTimerEl.textContent = m + ':' + String(s).padStart(2, '0');
+  }, 1000);
+}
+
+function calcWpm(chars, elapsedMs) {
+  if (elapsedMs < 200) return null; // too fast, ignore
+  const words = chars / 5;
+  const minutes = elapsedMs / 60000;
+  return Math.round(words / minutes);
+}
 
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -566,6 +594,12 @@ function animateFW() {
 // ═══════════════════════════════════════════════════════════════════════════
 inputEl.addEventListener('input', () => {
   if (freeMode) return;
+  // Start word timer on first keystroke per word
+  if (!wordStartTime && inputEl.value.length > 0) {
+    wordStartTime = Date.now();
+  }
+  // Start session timer on very first keystroke
+  if (!sessionStart) startSessionTimer();
   const input = inputEl.value, target = targetText;
   let matched = 0;
   for (let i = 0; i < Math.min(input.length, target.length); i++) {
@@ -592,6 +626,17 @@ async function checkAnswer() {
     correct++;
     scoreCorrectEl.textContent = correct;
     inputEl.className = 'correct';
+
+    // Calculate WPM for this word
+    if (wordStartTime) {
+      const wpm = calcWpm(target.length, Date.now() - wordStartTime);
+      if (wpm !== null) {
+        scoreWpmEl.textContent = wpm;
+        scoreWpmEl.classList.add('score-wpm-highlight');
+        setTimeout(() => scoreWpmEl.classList.remove('score-wpm-highlight'), 1200);
+      }
+    }
+
     setFeedback('🎉 Bravô! Chính xác! Sang bài tiếp theo…', 'correct');
 
     // Submit score (fire-and-forget)
@@ -624,6 +669,7 @@ async function loadNext() {
   if (freeMode) {
     inputEl.value = '';
     inputEl.className = '';
+    wordStartTime = null;
     inputEl.focus();
     return;
   }
@@ -642,6 +688,7 @@ async function loadNext() {
     inputEl.value = '';
     inputEl.className = '';
     progressEl.style.width = '0%';
+    wordStartTime = null;
     setFeedback('', 'hidden');
     inputEl.focus();
   } catch (err) {
