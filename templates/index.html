@@ -23,6 +23,12 @@
   <nav class="header-nav">
     <button id="nav-home" class="nav-btn active">🏠 Luyện Gõ</button>
     <button id="nav-rank" class="nav-btn">🏆 Bảng XH</button>
+    <div class="nav-games-wrap">
+      <button id="nav-games" class="nav-btn">🎮 Games ▾</button>
+      <div id="games-dropdown" class="games-dropdown hidden">
+        <button class="games-dd-item" data-game="bowgame">🏹 Bắn Cung</button>
+      </div>
+    </div>
   </nav>
   <div class="header-user">
     <button id="user-btn" class="user-pill">
@@ -130,6 +136,36 @@
         <tr><td colspan="3" class="rank-empty">Đang tải…</td></tr>
       </tbody>
     </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     BowBound Mini – Bow & Arrow Game Page
+     ══════════════════════════════════════════════════════════════ -->
+<section id="page-bowgame" class="hidden" style="display:none">
+  <div class="bow-game-topbar">
+    <button id="bow-back-btn" class="game-back-btn">← Quay lại</button>
+    <button id="bow-restart-btn" class="game-back-btn" style="border-color:var(--sun);color:var(--sun)">🔄 Chơi lại</button>
+  </div>
+  <div class="game-title">🏹 Bắn Cung – BowBound Mini</div>
+
+  <canvas id="bow-game-canvas" width="1000" height="500"></canvas>
+
+  <div class="bow-ui-panel">
+    <div>Góc: <span id="bow-angle-display">30</span>°</div>
+    <div>Sức mạnh:</div>
+    <div class="power-bar-wrap"><div id="bow-power-fill"></div></div>
+    <div><span id="bow-power-pct">0</span>%</div>
+    <div>HP Boss: <span id="bow-boss-hp">100</span></div>
+    <div>Mũi tên: <span id="bow-arrow-count">0</span></div>
+  </div>
+
+  <div id="bow-miss-msg" class="bow-miss-msg hidden">💨 Trượt rồi!</div>
+
+  <div class="bow-controls-hint">
+    ◀ ▶ Di chuyển &nbsp;|&nbsp; ▲ ▼ Điều chỉnh góc &nbsp;|&nbsp;
+    <strong>Giữ Space</strong> – nạp lực &nbsp;|&nbsp;
+    <strong>Thả Space</strong> – bắn
   </div>
 </section>
 
@@ -735,6 +771,546 @@ function setFeedback(msg, cls) {
 // Bootstrap
 // ═══════════════════════════════════════════════════════════════════════════
 initUser().then(() => inputEl.focus());
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Games nav dropdown
+// ═══════════════════════════════════════════════════════════════════════════
+const navGames       = document.getElementById('nav-games');
+const gamesDropdown  = document.getElementById('games-dropdown');
+const pageBowgame    = document.getElementById('page-bowgame');
+
+navGames.addEventListener('click', e => {
+  e.stopPropagation();
+  gamesDropdown.classList.toggle('hidden');
+});
+document.addEventListener('click', () => gamesDropdown.classList.add('hidden'));
+gamesDropdown.addEventListener('click', e => e.stopPropagation());
+
+document.querySelectorAll('.games-dd-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    gamesDropdown.classList.add('hidden');
+    const game = btn.dataset.game;
+    if (game === 'bowgame') showBowGame();
+  });
+});
+
+function showBowGame() {
+  pageHome.style.display = 'none';
+  pageRank.style.display = 'none'; pageRank.classList.add('hidden');
+  pageBowgame.style.display = 'flex'; pageBowgame.classList.remove('hidden');
+  navHome.classList.remove('active');
+  navRank.classList.remove('active');
+  navGames.classList.add('active');
+  bowGameStart();
+}
+
+document.getElementById('bow-back-btn').addEventListener('click', () => {
+  bowGameStop();
+  pageBowgame.style.display = 'none'; pageBowgame.classList.add('hidden');
+  showPage('home');
+  navGames.classList.remove('active');
+  navHome.classList.add('active');
+});
+
+document.getElementById('bow-restart-btn').addEventListener('click', () => {
+  bowGameStop();
+  bowGameStart();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BowBound Mini – Game Logic
+// ═══════════════════════════════════════════════════════════════════════════
+(function() {
+  const canvas   = document.getElementById('bow-game-canvas');
+  const ctx      = canvas.getContext('2d');
+  const angleEl  = document.getElementById('bow-angle-display');
+  const powerEl  = document.getElementById('bow-power-fill');
+  const powerPct = document.getElementById('bow-power-pct');
+  const bossHpEl = document.getElementById('bow-boss-hp');
+
+  // ── Constants ──
+  const W = 1000, H = 500, GROUND_Y = 450;
+  const GRAVITY     = 0.4;
+  const MIN_POWER   = 0, MAX_POWER = 100;
+  const ARROW_DMG   = 10;
+
+  // ── State ──
+  const player = { x: 80, y: GROUND_Y, w: 30, h: 60, speed: 3, minX: 30, maxX: 280 };
+  const boss   = { x: 860, y: GROUND_Y - 120, w: 80, h: 120, maxHp: 100, hp: 100 };
+  const arrow  = { x: 0, y: 0, vx: 0, vy: 0, active: false, angle: 0 };
+
+  let gameState    = 'aiming'; // 'aiming' | 'flying' | 'win'
+  let currentAngle = 30;       // degrees
+  let currentPower = 0;
+  let isCharging   = false;
+  let chargeDir    = 1;        // oscillate for auto-charge visual
+  let raf          = null;
+  let hitFlash     = 0;        // frames to flash boss on hit
+  let winTimer     = 0;
+  let shakeX       = 0, shakeY = 0; // screen shake
+  let shakeDuration = 0;
+  let arrowCount   = 0;        // total arrows fired
+  let missTimer    = 0;        // frames to show "Trượt!" message
+
+  // Particles
+  let particles = [];
+
+  const keys = {};
+
+  function bowGameStart() {
+    resetGame();
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup',   onKeyUp);
+    window.addEventListener('blur',    onWindowBlur);
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+  window.bowGameStart = bowGameStart;
+
+  function bowGameStop() {
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup',   onKeyUp);
+    window.removeEventListener('blur',    onWindowBlur);
+    if (raf) cancelAnimationFrame(raf);
+    raf = null;
+  }
+  window.bowGameStop = bowGameStop;
+
+  function onWindowBlur() {
+    // Clear all key states when window loses focus (prevents stuck keys)
+    Object.keys(keys).forEach(k => { keys[k] = false; });
+    if (isCharging) { isCharging = false; }
+  }
+
+  function resetGame() {
+    player.x = 80;
+    boss.hp   = boss.maxHp;
+    bossHpEl.textContent = boss.hp;
+    arrow.active = false;
+    currentAngle = 30;
+    currentPower = 0;
+    isCharging   = false;
+    gameState    = 'aiming';
+    particles    = [];
+    hitFlash     = 0;
+    winTimer     = 0;
+    arrowCount   = 0;
+    missTimer    = 0;
+    Object.keys(keys).forEach(k => { keys[k] = false; });
+    const arrowCountEl = document.getElementById('bow-arrow-count');
+    if (arrowCountEl) arrowCountEl.textContent = 0;
+    const missEl = document.getElementById('bow-miss-msg');
+    if (missEl) missEl.classList.add('hidden');
+    updateUI();
+  }
+
+  function onKeyDown(e) {
+    keys[e.code] = true;
+    if (e.code === 'Space') e.preventDefault();
+    if (e.code === 'ArrowUp'   || e.code === 'ArrowDown')  e.preventDefault();
+    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') e.preventDefault();
+    if (e.code === 'Space' && gameState === 'aiming') isCharging = true;
+  }
+
+  function onKeyUp(e) {
+    keys[e.code] = false;
+    if (e.code === 'Space' && gameState === 'aiming' && isCharging) {
+      isCharging = false;
+      if (currentPower > 0) fireArrow();
+    }
+  }
+
+  function fireArrow() {
+    const v0  = currentPower * 0.15;
+    const rad = currentAngle * Math.PI / 180;
+    // Arrow starts from the tip of the bow (right side of player)
+    arrow.x  = player.x + player.w;
+    arrow.y  = player.y - player.h * 0.75;
+    arrow.vx = Math.cos(rad) * v0;
+    arrow.vy = -Math.sin(rad) * v0;
+    arrow.active = true;
+    arrow.angle  = currentAngle;
+    gameState    = 'flying';
+    currentPower = 0;
+    arrowCount++;
+    const arrowCountEl = document.getElementById('bow-arrow-count');
+    if (arrowCountEl) arrowCountEl.textContent = arrowCount;
+    updateUI();
+  }
+
+  function updateUI() {
+    angleEl.textContent      = currentAngle;
+    powerEl.style.width      = currentPower + '%';
+    powerEl.style.background = currentPower > 80 ? '#ef4444' : (currentPower > 50 ? '#fbbf24' : '#22c55e');
+    powerPct.textContent     = currentPower;
+    bossHpEl.textContent     = Math.max(0, boss.hp);
+  }
+
+  function spawnHitParticles(x, y) {
+    const colors = ['#ff6b6b','#ffd93d','#ff922b','#f783ac','#74c0fc'];
+    for (let i = 0; i < 20; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 2 + Math.random() * 5;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2,
+        alpha: 1, color: colors[Math.floor(Math.random() * colors.length)],
+        size: 3 + Math.random() * 4, decay: 0.03 + Math.random() * 0.02,
+      });
+    }
+  }
+
+  function loop() {
+    // Screen shake
+    if (shakeDuration > 0) {
+      shakeX = (Math.random() - 0.5) * 8;
+      shakeY = (Math.random() - 0.5) * 8;
+      shakeDuration--;
+    } else {
+      shakeX = 0; shakeY = 0;
+    }
+
+    // ── Update ──
+    if (gameState === 'aiming') {
+      // Move
+      if (keys['ArrowLeft']  && player.x > player.minX)  player.x -= player.speed;
+      if (keys['ArrowRight'] && player.x < player.maxX) player.x += player.speed;
+      // Angle
+      if (keys['ArrowUp']   ) currentAngle = Math.min(80, currentAngle + 1);
+      if (keys['ArrowDown'] ) currentAngle = Math.max(0,  currentAngle - 1);
+      // Charge
+      if (isCharging) {
+        currentPower = Math.min(MAX_POWER, currentPower + 1.2);
+      }
+      updateUI();
+    }
+
+    if (gameState === 'flying' && arrow.active) {
+      arrow.x += arrow.vx;
+      arrow.y += arrow.vy;
+      arrow.vy += GRAVITY;
+      // Update arrow visual angle
+      arrow.angle = Math.atan2(arrow.vy, arrow.vx) * 180 / Math.PI;
+
+      // Ground collision
+      if (arrow.y >= GROUND_Y) {
+        arrow.active = false;
+        gameState = 'aiming';
+        // Show "miss" feedback
+        missTimer = 90;
+        const missEl = document.getElementById('bow-miss-msg');
+        if (missEl) missEl.classList.remove('hidden');
+      }
+      // Off-screen left/right
+      if (arrow.x > W + 50 || arrow.x < -50) {
+        arrow.active = false;
+        gameState = 'aiming';
+        missTimer = 90;
+        const missEl = document.getElementById('bow-miss-msg');
+        if (missEl) missEl.classList.remove('hidden');
+      }
+      // Boss AABB collision
+      if (
+        arrow.x >= boss.x && arrow.x <= boss.x + boss.w &&
+        arrow.y >= boss.y && arrow.y <= boss.y + boss.h
+      ) {
+        boss.hp -= ARROW_DMG;
+        hitFlash     = 12;
+        shakeDuration = 8;
+        spawnHitParticles(arrow.x, arrow.y);
+        arrow.active = false;
+        updateUI();
+        if (boss.hp <= 0) {
+          boss.hp  = 0;
+          gameState = 'win';
+          winTimer  = 180; // 3 s @ 60fps
+          launchFirework && launchFirework();
+        } else {
+          gameState = 'aiming';
+        }
+      }
+    }
+
+    if (gameState === 'win') {
+      winTimer--;
+      if (winTimer <= 0) resetGame();
+    }
+
+    // Miss message countdown
+    if (missTimer > 0) {
+      missTimer--;
+      if (missTimer === 0) {
+        const missEl = document.getElementById('bow-miss-msg');
+        if (missEl) missEl.classList.add('hidden');
+      }
+    }
+
+    // Update particles
+    particles = particles.filter(p => p.alpha > 0.02);
+    for (const p of particles) {
+      p.vx *= 0.96; p.vy = p.vy * 0.96 + 0.15;
+      p.x += p.vx;  p.y += p.vy;
+      p.alpha -= p.decay;
+    }
+
+    if (hitFlash > 0) hitFlash--;
+
+    // ── Draw ──
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+    drawBackground();
+    drawGround();
+    drawAimLine();
+    drawBoss();
+    drawPlayer();
+    if (arrow.active) drawArrow();
+    drawParticles();
+    if (gameState === 'win') drawWinText();
+    ctx.restore();
+
+    raf = requestAnimationFrame(loop);
+  }
+
+  // ── Drawing ──
+  function drawBackground() {
+    // Sky gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    grad.addColorStop(0, '#1a1a2e');
+    grad.addColorStop(1, '#16213e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    // Stars (static noise using seeded positions)
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    for (let i = 0; i < 60; i++) {
+      const sx = ((i * 137.508 + 31) % W);
+      const sy = ((i * 97.3 + 17) % (GROUND_Y - 20));
+      ctx.fillRect(sx, sy, 1.5, 1.5);
+    }
+    // Ground area below
+    ctx.fillStyle = '#0f3460';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+  }
+
+  function drawGround() {
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth   = 3;
+    ctx.shadowColor = '#22c55e';
+    ctx.shadowBlur  = 8;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  function drawPlayer() {
+    const px = player.x, py = player.y;
+    const bh = player.h; // body height
+    ctx.save();
+    // Body
+    ctx.strokeStyle = '#74c0fc';
+    ctx.lineWidth   = 3;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = '#74c0fc';
+    ctx.shadowBlur  = 6;
+    // Legs
+    ctx.beginPath();
+    ctx.moveTo(px + 15, py - bh * 0.45);
+    ctx.lineTo(px + 5,  py);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(px + 15, py - bh * 0.45);
+    ctx.lineTo(px + 25, py);
+    ctx.stroke();
+    // Torso
+    ctx.beginPath();
+    ctx.moveTo(px + 15, py - bh * 0.45);
+    ctx.lineTo(px + 15, py - bh * 0.8);
+    ctx.stroke();
+    // Head
+    ctx.beginPath();
+    ctx.arc(px + 15, py - bh * 0.9, 9, 0, Math.PI * 2);
+    ctx.fillStyle = '#74c0fc';
+    ctx.fill();
+    // Draw bow (arc) held in front
+    const rad = currentAngle * Math.PI / 180;
+    const bowCx = px + 26, bowCy = py - bh * 0.72;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth   = 3;
+    ctx.shadowColor = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(bowCx, bowCy, 18, -rad - 0.9, -rad + 0.9, false);
+    ctx.stroke();
+    // Bowstring
+    const bx1 = bowCx + Math.cos(-rad - 0.9) * 18;
+    const by1 = bowCy + Math.sin(-rad - 0.9) * 18;
+    const bx2 = bowCx + Math.cos(-rad + 0.9) * 18;
+    const by2 = bowCy + Math.sin(-rad + 0.9) * 18;
+    ctx.strokeStyle = 'rgba(255,255,200,0.7)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx1, by1);
+    ctx.lineTo(bx2, by2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawBoss() {
+    const bx = boss.x, by = boss.y, bw = boss.w, bh = boss.h;
+    ctx.save();
+    // Flash red on hit
+    const flash = hitFlash > 0;
+    ctx.shadowColor = flash ? '#ff0000' : '#e11d48';
+    ctx.shadowBlur  = flash ? 30 : 14;
+    // Body
+    const grad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+    if (flash) {
+      grad.addColorStop(0, '#ff4444');
+      grad.addColorStop(1, '#ff0000');
+    } else {
+      grad.addColorStop(0, '#e11d48');
+      grad.addColorStop(1, '#9f1239');
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 12);
+    ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur  = 8;
+    ctx.beginPath();
+    ctx.arc(bx + 22, by + 24, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(bx + 58, by + 24, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1e293b';
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(bx + 23, by + 24, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(bx + 59, by + 24, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // Mouth (menacing grin)
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth   = 3;
+    ctx.beginPath();
+    ctx.arc(bx + 40, by + 50, 16, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+    // HP bar above boss
+    const hpPct = Math.max(0, boss.hp / boss.maxHp);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.roundRect(bx - 5, by - 20, bw + 10, 12, 6);
+    ctx.fill();
+    const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#fbbf24' : '#ef4444';
+    ctx.fillStyle = hpColor;
+    ctx.beginPath();
+    ctx.roundRect(bx - 3, by - 18, (bw + 6) * hpPct, 8, 4);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawArrow() {
+    ctx.save();
+    ctx.translate(arrow.x, arrow.y);
+    const rad = Math.atan2(arrow.vy, arrow.vx);
+    ctx.rotate(rad);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth   = 3;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur  = 8;
+    // Shaft
+    ctx.beginPath();
+    ctx.moveTo(-20, 0);
+    ctx.lineTo(10, 0);
+    ctx.stroke();
+    // Arrowhead (triangle)
+    ctx.fillStyle = '#ffd93d';
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(4, -4);
+    ctx.lineTo(4, 4);
+    ctx.closePath();
+    ctx.fill();
+    // Fletching
+    ctx.strokeStyle = '#e11d48';
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.moveTo(-14, 0);
+    ctx.lineTo(-22, -6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-14, 0);
+    ctx.lineTo(-22, 6);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawAimLine() {
+    if (gameState !== 'aiming' || currentPower <= 0) return;
+    const v0  = currentPower * 0.15;
+    const rad = currentAngle * Math.PI / 180;
+    let vx = Math.cos(rad) * v0;
+    let vy = -Math.sin(rad) * v0;
+    let sx = player.x + player.w;
+    let sy = player.y - player.h * 0.75;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,230,80,0.55)';
+    ctx.lineWidth   = 2;
+    ctx.setLineDash([6, 8]);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    for (let i = 0; i < 100; i++) {
+      sx += vx; sy += vy; vy += GRAVITY;
+      ctx.lineTo(sx, sy);
+      if (sy > GROUND_Y || sx > W) break;
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    ctx.save();
+    for (const p of particles) {
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle   = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur  = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur  = 0;
+    ctx.restore();
+  }
+
+  function drawWinText() {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, (180 - winTimer) / 20);
+    ctx.font        = 'bold 72px Nunito, sans-serif';
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur  = 30;
+    ctx.fillStyle   = '#ffd93d';
+    ctx.fillText('🎉 THẮNG! 🎉', W / 2, H / 2 - 20);
+    ctx.font        = '28px Nunito, sans-serif';
+    ctx.fillStyle   = '#fff';
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur  = 10;
+    ctx.fillText('Bắt đầu lại...', W / 2, H / 2 + 50);
+    ctx.restore();
+  }
+})();
 </script>
 </body>
 </html>

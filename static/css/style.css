@@ -451,6 +451,128 @@ footer {
 }
 .shake { animation: shake .45s ease; }
 
+.bow-game-topbar {
+  display: flex;
+  gap: .75rem;
+  align-self: flex-start;
+}
+.bow-miss-msg {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--red);
+  text-align: center;
+  animation: fadeInOut 1.5s ease forwards;
+}
+@keyframes fadeInOut {
+  0%   { opacity: 0; transform: translateY(-6px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- Games nav dropdown ---------- */
+.nav-games-wrap {
+  position: relative;
+}
+.games-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  padding: .5rem;
+  min-width: 180px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+.games-dd-item {
+  width: 100%;
+  padding: .6rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-radius: .5rem;
+  text-align: left;
+  font-size: .95rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background .15s;
+  color: var(--text);
+}
+.games-dd-item:hover { background: #f0f9ff; color: var(--sky); }
+
+/* ---------- Bow game page ---------- */
+#page-bowgame {
+  width: min(80vw, calc(100vw - 2rem));
+  max-width: min(80vw, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.game-back-btn {
+  align-self: flex-start;
+  padding: .4rem 1.1rem;
+  border: 2px solid var(--sky);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--sky);
+  font-size: .88rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .18s;
+}
+.game-back-btn:hover { background: var(--sky); color: #fff; }
+.game-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+}
+#bow-game-canvas {
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+  display: block;
+  max-width: 100%;
+  background: #1a1a2e;
+}
+.bow-ui-panel {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--muted);
+  width: 100%;
+}
+.bow-ui-panel span { color: var(--text); }
+.power-bar-wrap {
+  flex: 1;
+  min-width: 160px;
+  max-width: 280px;
+  height: 16px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+#bow-power-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  border-radius: 99px;
+  transition: background .1s;
+}
+.bow-controls-hint {
+  font-size: .8rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.7;
+}
+
 /* ---------- Responsive tweaks ---------- */
 @media (max-width: 560px) {
   .card { padding: 1.5rem 1rem; }
@@ -458,4 +580,5 @@ footer {
   .app-header { gap: .5rem; }
   .brand-name { display: none; }
   .nav-btn { padding: .4rem .75rem; font-size: .82rem; }
+  #bow-game-canvas { width: 100%; height: auto; }
 }
