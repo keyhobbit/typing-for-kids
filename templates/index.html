@@ -158,14 +158,18 @@
     <div><span id="bow-power-pct">0</span>%</div>
     <div>HP Boss: <span id="bow-boss-hp">100</span></div>
     <div>Mũi tên: <span id="bow-arrow-count">0</span></div>
+    <div>💨 Gió: <span id="bow-wind-display">✦ Lặng</span></div>
+    <div>⭐ <span id="bow-score">0</span> | 🏆 <span id="bow-highscore">0</span></div>
+    <div>Vòng: <span id="bow-round">1</span></div>
   </div>
 
   <div id="bow-miss-msg" class="bow-miss-msg hidden">💨 Trượt rồi!</div>
 
   <div class="bow-controls-hint">
-    ◀ ▶ Di chuyển &nbsp;|&nbsp; ▲ ▼ Điều chỉnh góc &nbsp;|&nbsp;
+    ◀ ▶ Di chuyển &nbsp;|&nbsp; ▲ ▼ Góc (0°–90°) &nbsp;|&nbsp;
     <strong>Giữ Space</strong> – nạp lực &nbsp;|&nbsp;
-    <strong>Thả Space</strong> – bắn
+    <strong>Thả Space</strong> – bắn &nbsp;|&nbsp;
+    💨 Gió đổi hướng sau mỗi vòng
   </div>
 </section>
 
@@ -851,6 +855,10 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
   let shakeDuration = 0;
   let arrowCount   = 0;        // total arrows fired
   let missTimer    = 0;        // frames to show "Trượt!" message
+  let wind         = 0;        // wind acceleration per frame (px/frame²)
+  let score        = 0;        // current round score
+  let highScore    = parseInt(localStorage.getItem('bow_highscore') || '0');
+  let round        = 1;        // round counter
 
   // Particles
   let particles = [];
@@ -896,6 +904,9 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
     winTimer     = 0;
     arrowCount   = 0;
     missTimer    = 0;
+    score        = 0;
+    round        = 1;
+    wind         = parseFloat(((Math.random() * 2 - 1) * 0.12).toFixed(3));
     Object.keys(keys).forEach(k => { keys[k] = false; });
     const arrowCountEl = document.getElementById('bow-arrow-count');
     if (arrowCountEl) arrowCountEl.textContent = 0;
@@ -921,7 +932,7 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
   }
 
   function fireArrow() {
-    const v0  = currentPower * 0.15;
+    const v0  = currentPower * 0.6;
     const rad = currentAngle * Math.PI / 180;
     // Arrow starts from the tip of the bow (right side of player)
     arrow.x  = player.x + player.w;
@@ -944,6 +955,15 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
     powerEl.style.background = currentPower > 80 ? '#ef4444' : (currentPower > 50 ? '#fbbf24' : '#22c55e');
     powerPct.textContent     = currentPower;
     bossHpEl.textContent     = Math.max(0, boss.hp);
+    const windPct = Math.round(Math.abs(wind) / 0.12 * 100);
+    const windEl  = document.getElementById('bow-wind-display');
+    if (windEl) windEl.textContent = wind > 0.005 ? `→ ${windPct}%` : wind < -0.005 ? `← ${windPct}%` : '✦ Lặng';
+    const scoreEl = document.getElementById('bow-score');
+    if (scoreEl) scoreEl.textContent = score;
+    const hsEl = document.getElementById('bow-highscore');
+    if (hsEl) hsEl.textContent = highScore;
+    const roundEl = document.getElementById('bow-round');
+    if (roundEl) roundEl.textContent = round;
   }
 
   function spawnHitParticles(x, y) {
@@ -976,7 +996,7 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
       if (keys['ArrowLeft']  && player.x > player.minX)  player.x -= player.speed;
       if (keys['ArrowRight'] && player.x < player.maxX) player.x += player.speed;
       // Angle
-      if (keys['ArrowUp']   ) currentAngle = Math.min(80, currentAngle + 1);
+      if (keys['ArrowUp']   ) currentAngle = Math.min(90, currentAngle + 1);
       if (keys['ArrowDown'] ) currentAngle = Math.max(0,  currentAngle - 1);
       // Charge
       if (isCharging) {
@@ -986,6 +1006,7 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
     }
 
     if (gameState === 'flying' && arrow.active) {
+      arrow.vx += wind;        // wind drifts arrow horizontally each frame
       arrow.x += arrow.vx;
       arrow.y += arrow.vy;
       arrow.vy += GRAVITY;
@@ -1001,8 +1022,9 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
         const missEl = document.getElementById('bow-miss-msg');
         if (missEl) missEl.classList.remove('hidden');
       }
-      // Off-screen left/right
-      if (arrow.x > W + 50 || arrow.x < -50) {
+      // Off-screen: only count as miss if arrow goes very far horizontally
+      // (allow high-angle arrows to travel off-screen and arc back)
+      if (arrow.x > W + 400 || arrow.x < -400) {
         arrow.active = false;
         gameState = 'aiming';
         missTimer = 90;
@@ -1024,6 +1046,16 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
           boss.hp  = 0;
           gameState = 'win';
           winTimer  = 180; // 3 s @ 60fps
+          // Score: 1000 base, -150 per extra arrow, minimum 100
+          const roundScore = Math.max(100, 1000 - (arrowCount - 1) * 150);
+          score = roundScore;
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('bow_highscore', String(highScore));
+          }
+          round++;
+          wind = parseFloat(((Math.random() * 2 - 1) * 0.12).toFixed(3));
+          updateUI();
           launchFirework && launchFirework();
         } else {
           gameState = 'aiming';
@@ -1085,6 +1117,32 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
       const sx = ((i * 137.508 + 31) % W);
       const sy = ((i * 97.3 + 17) % (GROUND_Y - 20));
       ctx.fillRect(sx, sy, 1.5, 1.5);
+    }
+    // Wind indicator (top-right corner of canvas)
+    {
+      const wPct = Math.round(Math.abs(wind) / 0.12 * 100);
+      ctx.save();
+      ctx.font = 'bold 13px Nunito, sans-serif';
+      ctx.textBaseline = 'top';
+      if (Math.abs(wind) > 0.005) {
+        const dir   = wind > 0 ? '▶' : '◀';
+        const bars  = dir.repeat(Math.min(3, Math.max(1, Math.ceil(wPct / 34))));
+        ctx.fillStyle = wind > 0 ? 'rgba(100,200,255,0.9)' : 'rgba(255,160,100,0.9)';
+        ctx.fillText(`💨 ${bars} ${wPct}%`, W - 145, 12);
+      } else {
+        ctx.fillStyle = 'rgba(150,220,200,0.8)';
+        ctx.fillText('💨 Lặng gió', W - 105, 12);
+      }
+      ctx.restore();
+    }
+    // Score / round HUD (top-left)
+    {
+      ctx.save();
+      ctx.font = 'bold 13px Nunito, sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(255,220,80,0.85)';
+      ctx.fillText(`⭐ ${score}  🏆 ${highScore}  Vòng ${round}`, 12, 12);
+      ctx.restore();
     }
     // Ground area below
     ctx.fillStyle = '#0f3460';
@@ -1254,10 +1312,10 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
 
   function drawAimLine() {
     if (gameState !== 'aiming' || currentPower <= 0) return;
-    const v0  = currentPower * 0.15;
+    const v0  = currentPower * 0.6;
     const rad = currentAngle * Math.PI / 180;
-    let vx = Math.cos(rad) * v0;
-    let vy = -Math.sin(rad) * v0;
+    let simVx = Math.cos(rad) * v0;
+    let simVy = -Math.sin(rad) * v0;
     let sx = player.x + player.w;
     let sy = player.y - player.h * 0.75;
 
@@ -1267,10 +1325,17 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
     ctx.setLineDash([6, 8]);
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    for (let i = 0; i < 100; i++) {
-      sx += vx; sy += vy; vy += GRAVITY;
-      ctx.lineTo(sx, sy);
-      if (sy > GROUND_Y || sx > W) break;
+    let prevVisible = true;
+    for (let i = 0; i < 500; i++) {
+      simVx += wind;
+      sx += simVx; sy += simVy; simVy += GRAVITY;
+      if (sy > GROUND_Y) break;
+      const visible = sx >= 0 && sx <= W && sy >= 0;
+      if (visible) {
+        if (!prevVisible) { ctx.stroke(); ctx.beginPath(); ctx.moveTo(sx, sy); }
+        else ctx.lineTo(sx, sy);
+      }
+      prevVisible = visible;
     }
     ctx.stroke();
     ctx.setLineDash([]);
@@ -1302,12 +1367,21 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
     ctx.shadowColor = '#fbbf24';
     ctx.shadowBlur  = 30;
     ctx.fillStyle   = '#ffd93d';
-    ctx.fillText('🎉 THẮNG! 🎉', W / 2, H / 2 - 20);
-    ctx.font        = '28px Nunito, sans-serif';
+    ctx.fillText('🎉 THẮNG! 🎉', W / 2, H / 2 - 35);
+    ctx.font        = '30px Nunito, sans-serif';
+    ctx.fillStyle   = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    ctx.fillText(`⭐ +${score} điểm  (${arrowCount} mũi tên)`, W / 2, H / 2 + 20);
+    ctx.font        = '22px Nunito, sans-serif';
+    ctx.fillStyle   = '#a5f3fc';
+    ctx.shadowColor = '#a5f3fc';
+    ctx.shadowBlur  = 8;
+    ctx.fillText(`Kỷ lục: ${highScore} điểm`, W / 2, H / 2 + 58);
+    ctx.font        = '20px Nunito, sans-serif';
     ctx.fillStyle   = '#fff';
     ctx.shadowColor = '#fff';
-    ctx.shadowBlur  = 10;
-    ctx.fillText('Bắt đầu lại...', W / 2, H / 2 + 50);
+    ctx.shadowBlur  = 6;
+    ctx.fillText('Vòng mới đang bắt đầu...', W / 2, H / 2 + 90);
     ctx.restore();
   }
 })();
