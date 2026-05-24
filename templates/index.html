@@ -27,6 +27,7 @@
       <button id="nav-games" class="nav-btn">🎮 Games ▾</button>
       <div id="games-dropdown" class="games-dropdown hidden">
         <button class="games-dd-item" data-game="bowgame">🏹 Bắn Cung</button>
+        <button class="games-dd-item" data-game="bowgame2">🧮 Bắn Cung v2</button>
       </div>
     </div>
   </nav>
@@ -170,6 +171,40 @@
     <strong>Giữ Space</strong> – nạp lực &nbsp;|&nbsp;
     <strong>Thả Space</strong> – bắn &nbsp;|&nbsp;
     💨 Gió đổi hướng sau mỗi vòng
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     BowMath v2 – Math Quest Archery Game
+     ══════════════════════════════════════════════════════════════ -->
+<section id="page-bowgame2" class="hidden" style="display:none">
+  <div class="bow-game-topbar">
+    <button id="bow2-back-btn" class="game-back-btn">← Quay lại</button>
+    <button id="bow2-restart-btn" class="game-back-btn" style="border-color:var(--sun);color:var(--sun)">🔄 Chơi lại</button>
+  </div>
+  <div class="game-title">🧮 Bắn Cung v2 – Math Quest</div>
+
+  <canvas id="bow2-game-canvas" width="1000" height="500"></canvas>
+
+  <div class="bow2-math-panel">
+    <div class="bow2-question-wrap">
+      <span class="bow2-q-label">🎯 Giải toán để bắn!</span>
+      <span id="bow2-question" class="bow2-question-text">Đang tải...</span>
+    </div>
+    <div class="bow2-input-row">
+      <input type="number" id="bow2-answer" class="bow2-answer-input"
+             placeholder="?" autocomplete="off" inputmode="numeric" />
+      <button id="bow2-submit-btn" class="btn btn-sky">🏹 Bắn!</button>
+    </div>
+    <div id="bow2-feedback" class="bow2-feedback"></div>
+    <div class="bow2-stats">
+      <div>❓ <span id="bow2-q-count">0</span> câu</div>
+      <div>✅ <span id="bow2-correct-count">0</span> đúng</div>
+      <div>💥 HP Boss: <span id="bow2-boss-hp">100</span></div>
+      <div>⭐ Điểm: <span id="bow2-score">0</span></div>
+      <div>🏆 Kỷ lục: <span id="bow2-highscore">0</span></div>
+      <div>🔁 Vòng: <span id="bow2-round">1</span></div>
+    </div>
   </div>
 </section>
 
@@ -794,7 +829,8 @@ document.querySelectorAll('.games-dd-item').forEach(btn => {
   btn.addEventListener('click', () => {
     gamesDropdown.classList.add('hidden');
     const game = btn.dataset.game;
-    if (game === 'bowgame') showBowGame();
+    if (game === 'bowgame')  showBowGame();
+    if (game === 'bowgame2') showBowGame2();
   });
 });
 
@@ -819,6 +855,33 @@ document.getElementById('bow-back-btn').addEventListener('click', () => {
 document.getElementById('bow-restart-btn').addEventListener('click', () => {
   bowGameStop();
   bowGameStart();
+});
+
+// ── Bow Game v2 navigation ──
+const pageBowgame2 = document.getElementById('page-bowgame2');
+
+function showBowGame2() {
+  pageHome.style.display    = 'none';
+  pageRank.style.display    = 'none';  pageRank.classList.add('hidden');
+  pageBowgame.style.display = 'none';  pageBowgame.classList.add('hidden');
+  pageBowgame2.style.display = 'flex'; pageBowgame2.classList.remove('hidden');
+  navHome.classList.remove('active');
+  navRank.classList.remove('active');
+  navGames.classList.add('active');
+  bow2GameStart();
+}
+
+document.getElementById('bow2-back-btn').addEventListener('click', () => {
+  bow2GameStop();
+  pageBowgame2.style.display = 'none'; pageBowgame2.classList.add('hidden');
+  showPage('home');
+  navGames.classList.remove('active');
+  navHome.classList.add('active');
+});
+
+document.getElementById('bow2-restart-btn').addEventListener('click', () => {
+  bow2GameStop();
+  bow2GameStart();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1384,6 +1447,524 @@ document.getElementById('bow-restart-btn').addEventListener('click', () => {
     ctx.fillText('Vòng mới đang bắt đầu...', W / 2, H / 2 + 90);
     ctx.restore();
   }
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BowBound v2 – Math Quest Archery Game
+// Physics: fixed 25° angle, auto-aim power calculated per shot.
+// Formula: v0 = sqrt(0.5 * g * dx² / ((dy + dx·tan θ) · cos²θ))
+// ═══════════════════════════════════════════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('bow2-game-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  // ── Constants ──
+  const W           = 1000, H = 500, GROUND_Y = 450;
+  const GRAVITY     = 0.4;
+  const ARROW_DMG   = 20;   // 5 correct answers defeat the boss (100 HP)
+  const AUTO_ANGLE  = 25;   // fixed launch angle in degrees
+  const BOSS_MAX_HP = 100;
+
+  // ── Game objects ──
+  const player = { x: 80, y: GROUND_Y, w: 30, h: 60 };
+  const boss   = { x: 850, y: GROUND_Y - 125, w: 90, h: 125, maxHp: BOSS_MAX_HP, hp: BOSS_MAX_HP };
+  const arrow  = { x: 0, y: 0, vx: 0, vy: 0, active: false };
+
+  // ── State ──
+  let gameState      = 'quiz';   // 'quiz' | 'shooting' | 'win'
+  let score          = 0;
+  let highScore      = parseInt(localStorage.getItem('bow2_highscore') || '0');
+  let round          = 1;
+  let qCount         = 0;        // total questions attempted
+  let correctCount   = 0;        // correct answers this session
+  let arrowCount     = 0;        // arrows fired this round
+  let winTimer       = 0;
+  let hitFlash       = 0;
+  let shakeDuration  = 0, shakeX = 0, shakeY = 0;
+  let particles      = [];
+  let raf            = null;
+  let currentQuestion = null;    // { text: string, answer: number }
+  let playerShootAnim = 0;       // frames for shoot recoil animation
+  let feedbackClearTimer = null;
+
+  // ── UI element refs ──
+  const questionEl  = document.getElementById('bow2-question');
+  const answerEl    = document.getElementById('bow2-answer');
+  const feedbackEl2 = document.getElementById('bow2-feedback');
+  const qCountEl    = document.getElementById('bow2-q-count');
+  const correctEl   = document.getElementById('bow2-correct-count');
+  const bossHpEl    = document.getElementById('bow2-boss-hp');
+  const scoreEl2    = document.getElementById('bow2-score');
+  const hsEl2       = document.getElementById('bow2-highscore');
+  const roundEl2    = document.getElementById('bow2-round');
+  const submitBtn2  = document.getElementById('bow2-submit-btn');
+
+  // ── Math question generator ──
+  // Generates addition/subtraction (result < 100) and multiplication/division (≤ 9×9 table)
+  function generateQuestion() {
+    const opIdx = Math.floor(Math.random() * 4);
+    let a, b, answer, text;
+    switch (opIdx) {
+      case 0: { // addition
+        a = Math.floor(Math.random() * 49) + 1;
+        b = Math.floor(Math.random() * Math.min(49, 99 - a)) + 1;
+        answer = a + b;
+        text   = `${a} + ${b} = ?`;
+        break;
+      }
+      case 1: { // subtraction
+        a = Math.floor(Math.random() * 89) + 11;
+        b = Math.floor(Math.random() * (a - 1)) + 1;
+        answer = a - b;
+        text   = `${a} \u2212 ${b} = ?`;
+        break;
+      }
+      case 2: { // multiplication (times table ≤ 9)
+        a = Math.floor(Math.random() * 9) + 1;
+        b = Math.floor(Math.random() * 9) + 1;
+        answer = a * b;
+        text   = `${a} \u00d7 ${b} = ?`;
+        break;
+      }
+      default: { // division (derived from times table, no remainder)
+        b      = Math.floor(Math.random() * 9) + 1;
+        answer = Math.floor(Math.random() * 9) + 1;
+        a      = b * answer;
+        text   = `${a} \u00f7 ${b} = ?`;
+        break;
+      }
+    }
+    return { text, answer };
+  }
+
+  // ── Auto-aim: compute launch speed v0 for exact hit at boss center ──
+  // Projectile physics (no wind in v2):
+  //   x(t) = x0 + v0·cos(θ)·t
+  //   y(t) = y0 − v0·sin(θ)·t + ½·g·t²
+  // Solving for v0 given (targetX, targetY):
+  //   v0 = sqrt(0.5·g·dx² / ((dy + dx·tan θ)·cos²θ))
+  function calcAutoV0() {
+    const startX  = player.x + player.w;
+    const startY  = player.y - player.h * 0.75;
+    const targetX = boss.x + boss.w * 0.5;
+    const targetY = boss.y + boss.h * 0.35;
+    const rad     = AUTO_ANGLE * Math.PI / 180;
+    const dx      = targetX - startX;
+    const dy      = targetY - startY;
+    const denom   = (dy + dx * Math.tan(rad)) * Math.pow(Math.cos(rad), 2);
+    if (denom <= 0) return 20; // safety fallback
+    return Math.sqrt(0.5 * GRAVITY * dx * dx / denom);
+  }
+
+  // ── Fire arrow with computed v0 ──
+  function fireArrow() {
+    const startX = player.x + player.w;
+    const startY = player.y - player.h * 0.75;
+    const rad    = AUTO_ANGLE * Math.PI / 180;
+    const v0     = calcAutoV0();
+    arrow.x  = startX;
+    arrow.y  = startY;
+    arrow.vx = Math.cos(rad) * v0;
+    arrow.vy = -Math.sin(rad) * v0;
+    arrow.active = true;
+    gameState    = 'shooting';
+    arrowCount++;
+    setInputEnabled(false);
+  }
+
+  // ── Answer submission ──
+  function onSubmit() {
+    if (gameState !== 'quiz') return;
+    const val = parseInt(answerEl.value, 10);
+    if (isNaN(val)) {
+      answerEl.classList.add('incorrect');
+      setTimeout(() => answerEl.classList.remove('incorrect'), 500);
+      return;
+    }
+    qCount++;
+    qCountEl.textContent = qCount;
+
+    if (val === currentQuestion.answer) {
+      // ── Correct ──
+      correctCount++;
+      correctEl.textContent = correctCount;
+      answerEl.classList.add('correct');
+      setFeedback2('\ud83c\udf89 Ch\u00ednh x\u00e1c! B\u1eafn!', 'correct');
+      clearTimeout(feedbackClearTimer);
+      playerShootAnim = 22;
+      setInputEnabled(false); // disable immediately to prevent double-submit
+      setTimeout(() => {
+        answerEl.classList.remove('correct');
+        answerEl.value = '';
+        fireArrow();
+      }, 260);
+    } else {
+      // ── Wrong ──
+      answerEl.classList.add('incorrect');
+      answerEl.select();
+      setFeedback2(`\u274c Sai r\u1ed3i! \u0110\u00e1p \u00e1n \u0111\u00fang l\u00e0: ${currentQuestion.answer}`, 'incorrect');
+      clearTimeout(feedbackClearTimer);
+      feedbackClearTimer = setTimeout(() => {
+        answerEl.classList.remove('incorrect');
+        answerEl.value = '';
+        // Show new question after wrong
+        currentQuestion = generateQuestion();
+        questionEl.textContent = currentQuestion.text;
+        setFeedback2('', '');
+        answerEl.focus();
+      }, 1800);
+    }
+  }
+
+  function onAnswerKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); onSubmit(); }
+  }
+
+  function setInputEnabled(enabled) {
+    answerEl.disabled  = !enabled;
+    submitBtn2.disabled = !enabled;
+    if (enabled) setTimeout(() => answerEl.focus(), 50);
+  }
+
+  function setFeedback2(msg, cls) {
+    feedbackEl2.textContent = msg;
+    feedbackEl2.className   = 'bow2-feedback' + (cls ? ' ' + cls : '');
+  }
+
+  function updateUI2() {
+    bossHpEl.textContent  = Math.max(0, boss.hp);
+    scoreEl2.textContent  = score;
+    hsEl2.textContent     = highScore;
+    roundEl2.textContent  = round;
+    qCountEl.textContent  = qCount;
+    correctEl.textContent = correctCount;
+  }
+
+  // ── Hit particles ──
+  function spawnHitParticles2(x, y) {
+    const colors = ['#ff6b6b','#ffd93d','#ff922b','#f783ac','#74c0fc'];
+    for (let i = 0; i < 22; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 2 + Math.random() * 5;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2,
+        alpha: 1, color: colors[Math.floor(Math.random() * colors.length)],
+        size: 3 + Math.random() * 4, decay: 0.03 + Math.random() * 0.02,
+      });
+    }
+  }
+
+  // ── Next round (same session, new boss) ──
+  function nextRound() {
+    boss.hp = boss.maxHp;
+    arrow.active  = false;
+    arrowCount    = 0;
+    gameState     = 'quiz';
+    particles     = [];
+    hitFlash      = 0;
+    winTimer      = 0;
+    currentQuestion = generateQuestion();
+    questionEl.textContent = currentQuestion.text;
+    setFeedback2('', '');
+    setInputEnabled(true);
+    updateUI2();
+  }
+
+  // ── Full game reset ──
+  function resetGame2() {
+    boss.hp      = boss.maxHp;
+    arrow.active = false;
+    gameState    = 'quiz';
+    score        = 0;
+    round        = 1;
+    qCount       = 0;
+    correctCount = 0;
+    arrowCount   = 0;
+    particles    = [];
+    hitFlash     = 0;
+    winTimer     = 0;
+    shakeDuration = 0; shakeX = 0; shakeY = 0;
+    playerShootAnim = 0;
+    clearTimeout(feedbackClearTimer);
+    currentQuestion = generateQuestion();
+    questionEl.textContent = currentQuestion.text;
+    setFeedback2('', '');
+    setInputEnabled(true);
+    updateUI2();
+  }
+
+  // ── Main game loop ──
+  function loop2() {
+    // Screen shake
+    if (shakeDuration > 0) {
+      shakeX = (Math.random() - 0.5) * 8;
+      shakeY = (Math.random() - 0.5) * 8;
+      shakeDuration--;
+    } else { shakeX = 0; shakeY = 0; }
+
+    if (playerShootAnim > 0) playerShootAnim--;
+
+    // Arrow physics
+    if (gameState === 'shooting' && arrow.active) {
+      arrow.x  += arrow.vx;
+      arrow.y  += arrow.vy;
+      arrow.vy += GRAVITY;
+
+      // Ground miss
+      if (arrow.y >= GROUND_Y || arrow.x > W + 100) {
+        arrow.active  = false;
+        currentQuestion = generateQuestion();
+        questionEl.textContent = currentQuestion.text;
+        setFeedback2('', '');
+        gameState = 'quiz';
+        setInputEnabled(true);
+      }
+
+      // Boss AABB collision
+      if (
+        arrow.x >= boss.x && arrow.x <= boss.x + boss.w &&
+        arrow.y >= boss.y && arrow.y <= boss.y + boss.h
+      ) {
+        boss.hp      -= ARROW_DMG;
+        hitFlash      = 14;
+        shakeDuration = 10;
+        spawnHitParticles2(arrow.x, arrow.y);
+        arrow.active  = false;
+        updateUI2();
+
+        if (boss.hp <= 0) {
+          boss.hp   = 0;
+          gameState = 'win';
+          winTimer  = 200;
+          // Score: base 500 + 50 per correct answer, minus 30 per wrong
+          const roundScore = Math.max(100,
+            500 + correctCount * 50 - (qCount - correctCount) * 30
+          );
+          score += roundScore;
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('bow2_highscore', String(highScore));
+          }
+          round++;
+          updateUI2();
+          typeof launchFirework === 'function' && launchFirework();
+        } else {
+          gameState = 'quiz';
+          currentQuestion = generateQuestion();
+          questionEl.textContent = currentQuestion.text;
+          setFeedback2('', '');
+          setInputEnabled(true);
+        }
+      }
+    }
+
+    if (gameState === 'win') {
+      winTimer--;
+      if (winTimer <= 0) nextRound();
+    }
+
+    // Particle update
+    particles = particles.filter(p => p.alpha > 0.02);
+    for (const p of particles) {
+      p.vx *= 0.96; p.vy = p.vy * 0.96 + 0.15;
+      p.x  += p.vx;  p.y += p.vy;
+      p.alpha -= p.decay;
+    }
+    if (hitFlash > 0) hitFlash--;
+
+    // ── Draw ──
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+    drawBg2();
+    drawGround2();
+    drawBoss2();
+    drawPlayer2();
+    if (arrow.active) drawArrow2();
+    drawParticles2();
+    if (gameState === 'win') drawWin2();
+    ctx.restore();
+
+    raf = requestAnimationFrame(loop2);
+  }
+
+  // ────────────────────── Drawing helpers ──────────────────────
+  function drawBg2() {
+    const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    grad.addColorStop(0, '#0d1b2a');
+    grad.addColorStop(1, '#1b263b');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    // Stars
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    for (let i = 0; i < 60; i++) {
+      ctx.fillRect((i * 137.508 + 31) % W, (i * 97.3 + 17) % (GROUND_Y - 20), 1.5, 1.5);
+    }
+    // HUD top-left
+    ctx.save();
+    ctx.font = 'bold 13px Nunito, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,220,80,0.9)';
+    ctx.fillText(`\u2b50 ${score}  \ud83c\udfc6 ${highScore}  V\u00f2ng ${round}`, 12, 12);
+    // Accuracy top-right
+    const acc = qCount > 0 ? Math.round(correctCount / qCount * 100) : 100;
+    ctx.fillStyle = 'rgba(134,239,172,0.85)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`\u2705 ${correctCount}/${qCount}  \u0110CN: ${acc}%`, W - 12, 12);
+    ctx.restore();
+    // Ground fill
+    ctx.fillStyle = '#0a2342';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+  }
+
+  function drawGround2() {
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth   = 3;
+    ctx.shadowColor = '#22c55e';
+    ctx.shadowBlur  = 8;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  function drawPlayer2() {
+    const px = player.x, py = player.y, bh = player.h;
+    const isShootingAnim = playerShootAnim > 0;
+    ctx.save();
+    ctx.strokeStyle = '#93c5fd';
+    ctx.lineWidth   = 3;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = '#93c5fd';
+    ctx.shadowBlur  = 6;
+    // Legs
+    ctx.beginPath(); ctx.moveTo(px+15, py-bh*0.45); ctx.lineTo(px+5,  py); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px+15, py-bh*0.45); ctx.lineTo(px+25, py); ctx.stroke();
+    // Torso
+    ctx.beginPath(); ctx.moveTo(px+15, py-bh*0.45); ctx.lineTo(px+15, py-bh*0.8); ctx.stroke();
+    // Head
+    ctx.beginPath(); ctx.arc(px+15, py-bh*0.9, 9, 0, Math.PI*2);
+    ctx.fillStyle = '#93c5fd'; ctx.fill();
+    // Bow at fixed 25°, with slight recoil animation when shooting
+    const dispAngle = isShootingAnim
+      ? AUTO_ANGLE + playerShootAnim * 0.3 - 3
+      : AUTO_ANGLE;
+    const rad    = dispAngle * Math.PI / 180;
+    const bowCx  = px + 26, bowCy = py - bh * 0.72;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth   = 3;
+    ctx.shadowColor = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(bowCx, bowCy, 18, -rad - 0.9, -rad + 0.9, false);
+    ctx.stroke();
+    // Bowstring
+    const bx1 = bowCx + Math.cos(-rad - 0.9) * 18;
+    const by1 = bowCy + Math.sin(-rad - 0.9) * 18;
+    const bx2 = bowCx + Math.cos(-rad + 0.9) * 18;
+    const by2 = bowCy + Math.sin(-rad + 0.9) * 18;
+    ctx.strokeStyle = isShootingAnim ? 'rgba(255,255,200,0.3)' : 'rgba(255,255,200,0.75)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath(); ctx.moveTo(bx1, by1); ctx.lineTo(bx2, by2); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawBoss2() {
+    const bx = boss.x, by = boss.y, bw = boss.w, bh = boss.h;
+    ctx.save();
+    const flash = hitFlash > 0;
+    ctx.shadowColor = flash ? '#ff0000' : '#e11d48';
+    ctx.shadowBlur  = flash ? 30 : 14;
+    const grad = ctx.createLinearGradient(bx, by, bx+bw, by+bh);
+    if (flash) { grad.addColorStop(0,'#ff4444'); grad.addColorStop(1,'#ff0000'); }
+    else       { grad.addColorStop(0,'#e11d48'); grad.addColorStop(1,'#9f1239'); }
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 12); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fbbf24'; ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(bx+24, by+28, 8, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx+66, by+28, 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1e293b'; ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(bx+25, by+28, 3.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx+67, by+28, 3.5, 0, Math.PI*2); ctx.fill();
+    // Mouth
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(bx+45, by+56, 18, 0.2, Math.PI-0.2); ctx.stroke();
+    // HP bar
+    const hpPct   = Math.max(0, boss.hp / boss.maxHp);
+    const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#fbbf24' : '#ef4444';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.roundRect(bx-5, by-22, bw+10, 13, 6); ctx.fill();
+    ctx.fillStyle = hpColor;
+    ctx.beginPath(); ctx.roundRect(bx-3, by-20, (bw+6)*hpPct, 9, 4); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawArrow2() {
+    ctx.save();
+    ctx.translate(arrow.x, arrow.y);
+    ctx.rotate(Math.atan2(arrow.vy, arrow.vx));
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(10, 0); ctx.stroke();
+    ctx.fillStyle = '#ffd93d';
+    ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(4,-4); ctx.lineTo(4,4); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#e11d48'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(-22,-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(-22, 6); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawParticles2() {
+    ctx.save();
+    for (const p of particles) {
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle   = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur  = 6;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawWin2() {
+    const t = Math.min(1, (200 - winTimer) / 25);
+    ctx.save();
+    ctx.globalAlpha = t;
+    ctx.font = 'bold 68px Nunito, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 32;
+    ctx.fillStyle = '#ffd93d';
+    ctx.fillText('\ud83c\udf89 TH\u1eafNG! \ud83c\udf89', W/2, H/2 - 42);
+    ctx.font = '26px Nunito, sans-serif';
+    ctx.fillStyle = '#86efac'; ctx.shadowColor = '#86efac'; ctx.shadowBlur = 10;
+    ctx.fillText(`+${Math.max(100, 500 + correctCount*50 - (qCount-correctCount)*30)} \u0111i\u1ec3m`, W/2, H/2 + 14);
+    ctx.font = '20px Nunito, sans-serif';
+    ctx.fillStyle = '#a5f3fc'; ctx.shadowColor = '#a5f3fc'; ctx.shadowBlur = 6;
+    ctx.fillText('V\u00f2ng m\u1edbi s\u1eafp b\u1eaft \u0111\u1ea7u...', W/2, H/2 + 50);
+    ctx.restore();
+  }
+
+  // ── Public API (exposed to window for nav code) ──
+  function bow2GameStart() {
+    resetGame2();
+    answerEl.addEventListener('keydown', onAnswerKeyDown);
+    submitBtn2.addEventListener('click', onSubmit);
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop2);
+  }
+
+  function bow2GameStop() {
+    answerEl.removeEventListener('keydown', onAnswerKeyDown);
+    submitBtn2.removeEventListener('click', onSubmit);
+    clearTimeout(feedbackClearTimer);
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+  }
+
+  window.bow2GameStart = bow2GameStart;
+  window.bow2GameStop  = bow2GameStop;
 })();
 </script>
 </body>
