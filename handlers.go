@@ -214,6 +214,50 @@ func handleRanking(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, entries)
 }
 
+// ── POST /api/bow/score ────────────────────────────────────────────────────
+// Records a Bắn Cung v2 combat-power result, then asynchronously refreshes the
+// ranking cache so the player sees their new standing within ~a second.
+
+func handleBowScore(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	userID, ok := authUser(r)
+	if !ok {
+		writeJSONError(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var body struct {
+		Power    int `json:"power"`
+		Level    int `json:"level"`
+		Prestige int `json:"prestige"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Power < 0 {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if err := AddBowScore(userID, body.Power, body.Level, body.Prestige); err != nil {
+		writeJSONError(w, "lỗi hệ thống", http.StatusInternalServerError)
+		return
+	}
+	go RebuildRankingCache()
+	writeJSON(w, map[string]any{"ok": true})
+}
+
+// ── GET /api/bow/ranking ───────────────────────────────────────────────────
+
+func handleBowRanking(w http.ResponseWriter, r *http.Request) {
+	period := r.URL.Query().Get("period")
+	switch period {
+	case "day", "week", "month", "year":
+	default:
+		period = "day"
+	}
+	entries := GetBowRanking(period)
+	writeJSON(w, entries)
+}
+
 // ── JSON helpers ───────────────────────────────────────────────────────────
 
 type publicUserData struct {

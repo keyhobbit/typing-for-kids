@@ -168,9 +168,28 @@ func AddScore(userID string, level int) error {
 	return err
 }
 
+// AddBowScore records a Bắn Cung v2 combat-power ("lực chiến") result.
+func AddBowScore(userID string, power, level, prestige int) error {
+	if power < 0 {
+		power = 0
+	}
+	if level < 1 {
+		level = 1
+	}
+	if prestige < 0 {
+		prestige = 0
+	}
+	_, err := db.Exec(
+		`INSERT INTO bow_scores(id,user_id,power,level,prestige,scored_at)
+		 VALUES(?,?,?,?,?,datetime('now'))`,
+		newUUID(), userID, power, level, prestige,
+	)
+	return err
+}
+
 // ── Ranking (from cache) ───────────────────────────────────────────────────
 
-// GetRanking returns the latest cached leaderboard for the given period.
+// GetRanking returns the latest cached typing leaderboard for the period.
 // period: "day" | "week" | "month" | "year"
 func GetRanking(period string) []RankEntry {
 	switch period {
@@ -178,10 +197,26 @@ func GetRanking(period string) []RankEntry {
 	default:
 		period = "day"
 	}
+	return getRankingByKey(period)
+}
+
+// GetBowRanking returns the cached Bắn Cung v2 leaderboard for the period.
+// Bow rankings are cached under keys "bow-day" | "bow-week" | … so they live
+// alongside the typing rankings in the same ranking_cache table.
+func GetBowRanking(period string) []RankEntry {
+	switch period {
+	case "day", "week", "month", "year":
+	default:
+		period = "day"
+	}
+	return getRankingByKey("bow-" + period)
+}
+
+func getRankingByKey(cacheKey string) []RankEntry {
 	rows, err := db.Query(
 		`SELECT rank, user_id, name, score, is_guest
 		 FROM ranking_cache WHERE period=? ORDER BY rank ASC`,
-		period,
+		cacheKey,
 	)
 	if err != nil {
 		return nil
@@ -191,7 +226,6 @@ func GetRanking(period string) []RankEntry {
 	for rows.Next() {
 		var e RankEntry
 		rows.Scan(&e.Rank, &e.UserID, &e.Name, &e.Score, &e.IsGuest)
-		e.IsGuest = e.IsGuest // already bool-ified by scanner
 		out = append(out, e)
 	}
 	return out

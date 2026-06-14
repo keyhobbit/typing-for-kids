@@ -7,7 +7,7 @@
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=14" />
+  <link rel="stylesheet" href="/static/css/style.css?v=15" />
 </head>
 <body>
 
@@ -20,7 +20,7 @@
     <span>⌨️</span>
     <span class="brand-name">KidTyping VN</span>
   </div>
-  <nav class="header-nav">
+  <nav class="header-nav" id="header-nav">
     <button id="nav-home" class="nav-btn active">🏠 Luyện Gõ</button>
     <button id="nav-rank" class="nav-btn">🏆 Bảng XH</button>
     <div class="nav-games-wrap">
@@ -33,6 +33,7 @@
     <button id="nav-sound" class="nav-btn" title="Bật/tắt âm thanh" aria-label="Bật hoặc tắt âm thanh">🔊</button>
   </nav>
   <div class="header-user">
+    <button id="nav-toggle" class="nav-toggle" aria-label="Mở menu" aria-expanded="false" aria-controls="header-nav">☰</button>
     <button id="user-btn" class="user-pill">
       <span id="user-avatar">👤</span>
       <span id="user-display-name" class="user-name-text">…</span>
@@ -157,6 +158,10 @@
 
 <!-- ── RANKING PAGE ── -->
 <section id="page-rank" class="hidden" style="display:none">
+  <div class="rank-game-switch" id="rank-game-switch" role="group" aria-label="Chọn trò chơi xếp hạng">
+    <button class="rank-game-btn active" data-game="typing">⌨️ Gõ chữ</button>
+    <button class="rank-game-btn" data-game="bow">🏹 Bắn Cung v2</button>
+  </div>
   <div class="rank-tabs" id="rank-tabs">
     <button class="rank-tab active" data-period="day">📅 Hôm nay</button>
     <button class="rank-tab" data-period="week">📆 Tuần này</button>
@@ -169,7 +174,7 @@
         <tr>
           <th style="width:60px">Hạng</th>
           <th>Người chơi</th>
-          <th style="text-align:right">Điểm</th>
+          <th style="text-align:right" id="rank-score-head">Điểm</th>
         </tr>
       </thead>
       <tbody id="rank-body">
@@ -278,6 +283,8 @@
 
     <button type="button" id="bow2-stats-toggle" class="bow2-stats-toggle" aria-expanded="false" aria-controls="bow2-stats">📊 Xem chỉ số nhân vật ▾</button>
     <div class="bow2-stats" id="bow2-stats">
+      <div>⚡ Lực chiến: <span id="bow2-power">0</span></div>
+      <div>🌟 Tái sinh: <span id="bow2-prestige">0</span></div>
       <div>🗺️ Màn: <span id="bow2-level">1</span>/1000</div>
       <div>❤️ Máu: <span id="bow2-hearts">5/5</span></div>
       <div>💥 HP Boss: <span id="bow2-boss-hp">100</span></div>
@@ -388,6 +395,7 @@ let targetText   = {{jsStr .Lesson.Content}};
 let correct = 0, total = 0;
 let freeMode = false;
 let rankPeriod = 'day';
+let rankGame   = 'typing';   // 'typing' | 'bow' — bảng xếp hạng đang xem
 
 // ── Timing & WPM ──
 let wordStartTime  = null;  // ms timestamp when current word typing began
@@ -421,6 +429,8 @@ const ddRegister      = document.getElementById('dd-register');
 const ddLogin         = document.getElementById('dd-login');
 const navHome         = document.getElementById('nav-home');
 const navRank         = document.getElementById('nav-rank');
+const navToggle       = document.getElementById('nav-toggle');
+const headerNav       = document.getElementById('header-nav');
 const pageHome        = document.getElementById('page-home');
 const pageRank        = document.getElementById('page-rank');
 const modalOverlay    = document.getElementById('modal-overlay');
@@ -716,10 +726,31 @@ function showPage(which) {
   }
 }
 
-navHome.addEventListener('click', () => showPage('home'));
+// ── Mobile hamburger menu (declutters the portrait header) ──
+function closeMobileNav() {
+  if (headerNav) headerNav.classList.remove('open');
+  if (navToggle) { navToggle.classList.remove('open'); navToggle.setAttribute('aria-expanded', 'false'); }
+  if (typeof gamesDropdown !== 'undefined' && gamesDropdown) gamesDropdown.classList.add('hidden');
+}
+if (navToggle && headerNav) {
+  navToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = headerNav.classList.toggle('open');
+    navToggle.classList.toggle('open', open);
+    navToggle.setAttribute('aria-expanded', String(open));
+    if (!open && typeof gamesDropdown !== 'undefined' && gamesDropdown) gamesDropdown.classList.add('hidden');
+  });
+  headerNav.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', e => {
+    if (e.target !== navToggle && !headerNav.contains(e.target)) closeMobileNav();
+  });
+}
+
+navHome.addEventListener('click', () => { showPage('home'); closeMobileNav(); });
 
 navRank.addEventListener('click', async () => {
   showPage('rank');
+  closeMobileNav();
   await loadRanking(rankPeriod);
 });
 
@@ -732,16 +763,32 @@ document.querySelectorAll('#rank-tabs .rank-tab').forEach(btn => {
   });
 });
 
+// ── Leaderboard game switch (Gõ chữ ⇄ Bắn Cung v2) ──
+const rankScoreHead = document.getElementById('rank-score-head');
+document.querySelectorAll('#rank-game-switch .rank-game-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('#rank-game-switch .rank-game-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rankGame = btn.dataset.game;
+    if (rankScoreHead) rankScoreHead.textContent = rankGame === 'bow' ? 'Lực chiến' : 'Điểm';
+    await loadRanking(rankPeriod);
+  });
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Ranking
 // ═══════════════════════════════════════════════════════════════════════════
 async function loadRanking(period) {
   rankBody.innerHTML = '<tr><td colspan="3" class="rank-empty">Đang tải…</td></tr>';
   try {
-    const res     = await fetch('/api/ranking?period=' + period);
+    const endpoint = (rankGame === 'bow') ? '/api/bow/ranking' : '/api/ranking';
+    const res     = await fetch(endpoint + '?period=' + period);
     const entries = await res.json();
     if (!entries || entries.length === 0) {
-      rankBody.innerHTML = '<tr><td colspan="3" class="rank-empty">Chưa có điểm số trong khoảng thời gian này 🕹️</td></tr>';
+      const empty = rankGame === 'bow'
+        ? 'Chưa có ai lập chiến tích Bắn Cung trong khoảng thời gian này 🏹'
+        : 'Chưa có điểm số trong khoảng thời gian này 🕹️';
+      rankBody.innerHTML = '<tr><td colspan="3" class="rank-empty">' + empty + '</td></tr>';
       return;
     }
     const medals = ['🥇', '🥈', '🥉'];
@@ -1004,6 +1051,7 @@ function showBowGame() {
   navHome.classList.remove('active');
   navRank.classList.remove('active');
   navGames.classList.add('active');
+  closeMobileNav();
   bowGameStart();
 }
 
@@ -1032,6 +1080,7 @@ function showBowGame2() {
   navHome.classList.remove('active');
   navRank.classList.remove('active');
   navGames.classList.add('active');
+  closeMobileNav();
   bow2GameStart();
 }
 
@@ -1791,9 +1840,15 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   let burstRemaining = 0;    // remaining arrows in current volley
 
   // ── State ──
-  let gameState      = 'quiz';   // 'quiz' | 'shooting' | 'upgrade' | 'win' | 'final'
+  let gameState      = 'quiz';   // 'quiz' | 'shooting' | 'upgrade' | 'win' | 'final' | 'gameover'
   let level          = 1;
   let maxLevel       = parseInt(localStorage.getItem('bow2_maxlevel') || '1');
+  // ── Prestige (Tái sinh): hoàn thành 1000 màn → reset + +1% thuộc tính cơ bản ──
+  let prestige       = parseInt(localStorage.getItem('bow2_prestige') || '0');
+  function prestigeMul() { return 1 + prestige * 0.01; }   // +1% base stats / lần tái sinh
+  // ── Lực chiến (combat power) submission throttle ──
+  let lastSentPower  = -1;
+  let sendInFlight   = false;
   // Per-operation difficulty: each op (+ − × ÷) can be on/off with its own level.
   const OPS = [
     { key: 'add', label: '➕ Cộng' },
@@ -1825,6 +1880,14 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   let winTimer       = 0;
   let hitFlash       = 0;
   let bossHit        = 0;        // 0..1 recoil reaction, set to 1 on hit then decays
+  // ── Advanced boss reactions (đánh trả / né / biểu cảm) ──
+  let bossDodge      = 0;        // -1..1 sideways dodge offset (animated)
+  let dodgeT         = 0;        // dodge animation frames remaining
+  let dodgeDir       = 1;        // dodge direction (-1 left / +1 right)
+  let bossCounter    = 0;        // 0..1 counter-attack telegraph + lunge
+  let counterT       = 0;        // counter sequence frames remaining
+  let counterApplied = false;    // ensure the counter hit lands once
+  let playerHurt     = 0;        // red vignette frames after a counter hit
   let shakeDuration  = 0, shakeX = 0, shakeY = 0;
   let particles      = [];
   let floaters       = [];       // floating damage numbers
@@ -1848,7 +1911,29 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   const maxLevelEl  = document.getElementById('bow2-maxlevel');
   const heartsEl    = document.getElementById('bow2-hearts');
   const shotsEl     = document.getElementById('bow2-shots');
+  const powerEl     = document.getElementById('bow2-power');
+  const prestigeEl  = document.getElementById('bow2-prestige');
   const submitBtn2  = document.getElementById('bow2-submit-btn');
+
+  // ── Lực chiến: tổng hợp sức mạnh nhân vật + tiến độ + tái sinh ──
+  function computeCombatPower() {
+    const effDmg = (damage * (1 + critChance * (critMult - 1)) + pierce) * arrowsPerShot;
+    const durab  = 1 + (maxHearts - BASE_HEARTS) * 0.08;
+    return Math.round(effDmg * durab) + level * 8 + prestige * 1000;
+  }
+  // Gửi lực chiến lên server (best = MAX(power)); chỉ gửi khi tăng & không trùng request.
+  function submitBowScore(force) {
+    if (typeof apiFetch !== 'function' || !curToken) return;
+    const power = computeCombatPower();
+    if (!force && (power <= lastSentPower || sendInFlight)) return;
+    sendInFlight = true;
+    const prev = lastSentPower;
+    lastSentPower = power;
+    apiFetch('/api/bow/score', { method: 'POST', body: JSON.stringify({ power, level, prestige }) })
+      .then(r => { if (!r || !r.ok) lastSentPower = prev; })
+      .catch(() => { lastSentPower = prev; })
+      .finally(() => { sendInFlight = false; });
+  }
 
   // ── Math question generator (per-operation difficulty) ──
   //   add/sub  easy:≤10 · medium:<100 · hard:2 chữ số
@@ -1914,6 +1999,9 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     arrow.vy = -Math.sin(rad) * v0;
     arrow.active = true;
     arrow.crit   = Math.random() < critChance;
+    // Né (dodge): hiếm & chỉ từ màn 6 trở lên → boss nhanh nhẹn né 1 mũi tên.
+    arrow.willDodge = (level >= 6 && boss.hp > 0 && dodgeT <= 0 && Math.random() < 0.10);
+    arrow.dodged    = false;
     gameState    = 'shooting';
     arrowCount++;
     setInputEnabled(false);
@@ -1996,6 +2084,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     if (maxLevelEl) maxLevelEl.textContent = maxLevel;
     if (heartsEl)   heartsEl.textContent   = hearts + '/' + maxHearts;
     if (shotsEl)    shotsEl.textContent    = arrowsPerShot;
+    if (powerEl)    powerEl.textContent    = computeCombatPower();
+    if (prestigeEl) prestigeEl.textContent = prestige;
   }
 
   // ── Hit particles ──
@@ -2030,6 +2120,14 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
   }
 
+  // ── Đánh trả (counter-attack): chỉ trùm nhỏ/thế giới, sau khi sống sót một đòn.
+  //    Telegraph rõ ràng rồi lao tới; mất tối đa 1 máu nhưng không bao giờ gây thua. ──
+  function maybeCounter() {
+    if (counterT > 0 || boss.kind === 'normal') return;
+    const chance = boss.kind === 'world' ? 0.40 : 0.25;
+    if (Math.random() < chance) { counterT = 46; counterApplied = false; }
+  }
+
   // ── Start a specific stage/level (sets boss from procedural difficulty) ──
   function startLevel(L) {
     level = L;
@@ -2043,6 +2141,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     winTimer     = 0;
     hitFlash     = 0;
     bossHit      = 0;
+    bossDodge    = 0; dodgeT = 0;
+    bossCounter  = 0; counterT = 0; counterApplied = false; playerHurt = 0;
     gameState    = 'quiz';
     pendingUpgrades = null;
     hideUpgradeOverlay();
@@ -2084,6 +2184,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     setInputEnabled(false);
     arrow.active = false;
     burstRemaining = 0;
+    submitBowScore(true);                 // chốt lực chiến của lượt chơi
     const ov = ensureOverlay();
     ov._title.textContent = '💔 Hết máu! Bạn đã tới màn ' + level;
     ov._row.textContent = '';
@@ -2096,6 +2197,44 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     btn.appendChild(ic); btn.appendChild(nm); btn.appendChild(ds);
     btn.addEventListener('click', () => { hideUpgradeOverlay(); resetGame2(); });
     ov._row.appendChild(btn);
+    ov.classList.remove('hidden');
+  }
+
+  // ── Prestige (Tái sinh): khi phá đảo 1000/1000 → reset + +1% chỉ số cơ bản ──
+  function showPrestigeChoice() {
+    gameState = 'prestige';
+    setInputEnabled(false);
+    arrow.active = false;
+    burstRemaining = 0;
+    const ov = ensureOverlay();
+    ov._title.textContent = '🏆 VÔ ĐỊCH! Hoàn thành ' + MAX_LEVEL + ' màn!';
+    ov._row.textContent = '';
+    const mkCard = (cls, icon, name, desc, onClick) => {
+      const c = document.createElement('button');
+      c.type = 'button'; c.className = 'bow2-upgrade-card ' + cls;
+      const ic = document.createElement('div'); ic.className = 'uc-icon'; ic.textContent = icon;
+      const nm = document.createElement('div'); nm.className = 'uc-name'; nm.textContent = name;
+      const ds = document.createElement('div'); ds.className = 'uc-desc'; ds.textContent = desc;
+      c.appendChild(ic); c.appendChild(nm); c.appendChild(ds);
+      c.addEventListener('click', onClick);
+      return c;
+    };
+    const nextBonus = (prestige + 1);
+    ov._row.appendChild(mkCard('up-crit', '🌟',
+      'Tái sinh (Lv.' + nextBonus + ')',
+      '+1% sức mạnh cơ bản vĩnh viễn · chơi lại từ màn 1',
+      () => {
+        prestige += 1;
+        localStorage.setItem('bow2_prestige', String(prestige));
+        if (window.Sfx) Sfx.win();
+        submitBowScore(true);
+        hideUpgradeOverlay();
+        resetGame2();
+      }));
+    ov._row.appendChild(mkCard('up-heal', '🔁',
+      'Chơi lại',
+      'Bắt đầu lại không nhận thưởng tái sinh',
+      () => { hideUpgradeOverlay(); resetGame2(); }));
     ov.classList.remove('hidden');
   }
 
@@ -2176,6 +2315,15 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       if (e.key === 'Enter' || e.key === '1') { e.preventDefault(); hideUpgradeOverlay(); resetGame2(); }
       return;
     }
+    if (gameState === 'prestige') {
+      if (e.key === '1' || e.key === '2' || e.key === 'Enter') {
+        e.preventDefault();
+        const cards = overlayEl ? overlayEl._row.querySelectorAll('.bow2-upgrade-card') : [];
+        const idx = (e.key === '2') ? 1 : 0;
+        if (cards[idx]) cards[idx].click();
+      }
+      return;
+    }
     if (gameState !== 'upgrade') return;
     if (e.key === '1' || e.key === '2' || e.key === '3') {
       e.preventDefault();
@@ -2203,18 +2351,23 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     score        = 0;
     qCount       = 0;
     correctCount = 0;
-    damage       = BASE_DAMAGE;
-    critChance   = 0.05;
-    critMult     = 2.0;
+    // Prestige buff: mỗi lần tái sinh +1% các chỉ số cơ bản (vĩnh viễn).
+    const pm     = prestigeMul();
+    damage       = BASE_DAMAGE * pm;
+    critChance   = Math.min(0.85, 0.05 * pm);
+    critMult     = 2.0 * pm;
     arrowsPerShot = 1;
     pierce       = 0;
     maxHearts    = BASE_HEARTS;
     hearts       = BASE_HEARTS;
+    lastSentPower = -1;
     burstRemaining = 0;
     particles    = [];
     floaters     = [];
     hitFlash     = 0;
     bossHit      = 0;
+    bossDodge    = 0; dodgeT = 0;
+    bossCounter  = 0; counterT = 0; counterApplied = false; playerHurt = 0;
     winTimer     = 0;
     shakeDuration = 0; shakeX = 0; shakeY = 0;
     playerShootAnim = 0;
@@ -2247,8 +2400,18 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         resolveAfterArrow();
       }
 
-      // Boss AABB collision
+      // Né (dodge): khi mũi tên tới sát, boss lách nhanh sang bên & mũi tên trượt.
+      if (arrow.willDodge && !arrow.dodged && arrow.x >= boss.x - 70 && arrow.x < boss.x + boss.w) {
+        arrow.dodged = true;
+        dodgeT   = 26;
+        dodgeDir = (boss.x + boss.w / 2 > W / 2) ? -1 : 1;   // né về phía trung tâm
+        spawnFloater(boss.x + boss.w / 2, boss.y - 6, 'Né! 💨', false);
+        if (window.Sfx) Sfx.shoot();
+      }
+
+      // Boss AABB collision (bỏ qua nếu boss đã né được mũi tên này)
       if (
+        !arrow.dodged &&
         arrow.x >= boss.x && arrow.x <= boss.x + boss.w &&
         arrow.y >= boss.y && arrow.y <= boss.y + boss.h
       ) {
@@ -2274,9 +2437,11 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
           if (reached > maxLevel) { maxLevel = reached; localStorage.setItem('bow2_maxlevel', String(maxLevel)); }
           score += Math.max(50, 100 + correctCount * 10 + level * 20);
           updateUI2();
+          submitBowScore();                 // lưu lực chiến (best) lên BXH
           if (level >= MAX_LEVEL) {
             gameState = 'final';
             winTimer  = 600;
+            submitBowScore(true);
             if (window.Sfx) Sfx.win();
             typeof launchFirework === 'function' && launchFirework();
           } else {
@@ -2286,6 +2451,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
             typeof launchFirework === 'function' && launchFirework();
           }
         } else {
+          maybeCounter();          // boss sống sót → có thể đánh trả (trùm nhỏ/thế giới)
           resolveAfterArrow();
         }
       }
@@ -2297,7 +2463,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
     if (gameState === 'final') {
       winTimer--;
-      if (winTimer <= 0) resetGame2();
+      if (winTimer <= 0) showPrestigeChoice();
     }
 
     // Particle update
@@ -2313,6 +2479,23 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     if (hitFlash > 0) hitFlash--;
     if (bossHit > 0.01) bossHit *= 0.86; else bossHit = 0;
 
+    // ── Reaction animations: dodge (né) & counter-attack (đánh trả) ──
+    if (dodgeT > 0) { dodgeT--; bossDodge = dodgeDir * Math.sin((26 - dodgeT) / 26 * Math.PI); }
+    else bossDodge = 0;
+    if (counterT > 0) {
+      counterT--;
+      bossCounter = counterT > 22 ? (46 - counterT) / 24 * 0.55 : Math.max(0, counterT / 22);
+      if (counterT === 21 && !counterApplied) {
+        counterApplied = true;
+        shakeDuration = Math.max(shakeDuration, 14);
+        playerHurt    = 18;
+        if (hearts > 1) { hearts -= 1; updateUI2(); }   // non-lethal: không bao giờ thua vì phản đòn
+        spawnFloater(player.x + 26, player.y - 64, '⚠️ Phản đòn!', true);
+        if (window.Sfx) Sfx.wrong();
+      }
+    } else bossCounter = 0;
+    if (playerHurt > 0) playerHurt--;
+
     // ── Draw ──
     ctx.save();
     ctx.translate(shakeX, shakeY);
@@ -2323,6 +2506,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     if (arrow.active) drawArrow2();
     drawParticles2();
     drawFloaters();
+    if (playerHurt > 0) {
+      ctx.save();
+      ctx.globalAlpha = (playerHurt / 18) * 0.5;
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 14;
+      ctx.strokeRect(7, 7, W - 14, H - 14);
+      ctx.restore();
+    }
     if (gameState === 'win' || gameState === 'final') drawWin2();
     ctx.restore();
 
@@ -2537,6 +2727,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     const sqX    = 1 + recoil * 0.14;
     const sqY    = 1 - recoil * 0.12;
     const leanBk = recoil * 0.13;
+    // Reaction · dodge (né): quick sidestep offset.
+    const dodge  = Math.max(-1, Math.min(1, o.dodge || 0));
+    const dodgeX = dodge * 26;
+    // Reaction · counter (đánh trả): telegraph build → lunge toward the archer (left).
+    const counter = Math.max(0, Math.min(1, o.counter || 0));
+    const lungeX  = -counter * 22;
+    const lungeY  = -counter * 6;
 
     ctx.save();
     // ── Ground shadow (stays on ground; smaller when the boss hops up) ──
@@ -2566,12 +2763,15 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     // ── Animated body group (pivot at the feet) ──
     ctx.save();
     const pvx = bx + bw / 2, pvy = by + bh;
-    ctx.translate(swayX + knockX, bobY);
-    ctx.translate(pvx, pvy); ctx.rotate(tilt + leanBk); ctx.scale(breathe * sqX, breathe * sqY); ctx.translate(-pvx, -pvy);
-    // Aura glow (per-world colour; pulses faster when panicking)
+    ctx.translate(swayX + knockX + dodgeX + lungeX, bobY + lungeY);
+    ctx.translate(pvx, pvy); ctx.rotate(tilt + leanBk - counter * 0.12); ctx.scale(breathe * sqX, breathe * sqY); ctx.translate(-pvx, -pvy);
+    // Aura glow (per-world colour; turns red & pulses hard while telegraphing a counter)
     ctx.save();
-    ctx.globalAlpha = flash ? 0.5 : (low ? 0.26 + Math.abs(Math.sin(at * 9)) * 0.16 : 0.2);
-    ctx.fillStyle = theme.glow; ctx.shadowColor = theme.glow; ctx.shadowBlur = 28;
+    const auraCol = counter > 0.04 ? '#ef4444' : theme.glow;
+    ctx.globalAlpha = counter > 0.04
+      ? 0.4 + Math.abs(Math.sin(at * 16)) * 0.32
+      : (flash ? 0.5 : (low ? 0.26 + Math.abs(Math.sin(at * 9)) * 0.16 : 0.2));
+    ctx.fillStyle = auraCol; ctx.shadowColor = auraCol; ctx.shadowBlur = counter > 0.04 ? 38 : 28;
     ctx.beginPath(); ctx.roundRect(bx + 6, by + 8, bw - 12, bh - 12, 14); ctx.fill();
     ctx.restore();
     // Body: a different monster per shape
@@ -2587,6 +2787,35 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       default:        drawBossDemon(bx, by, bw, bh, flash, theme);
     }
     ctx.restore();
+
+    // ── Reaction · biểu cảm theo HP: a speech-bubble emote that follows the boss ──
+    let emote = o.emote;
+    if (!emote) {
+      if (recoil > 0.5)                  emote = '😵';
+      else if (counter > 0.25)           emote = '😡';
+      else if (Math.abs(dodge) > 0.3)    emote = '😏';
+      else if (hpPct > 0 && hpPct < 0.3) emote = '😨';
+      else if (hpPct > 0 && hpPct < 0.6) emote = '😠';
+      else                               emote = '😎';
+    }
+    ctx.save();
+    ctx.translate(swayX + knockX + dodgeX + lungeX, bobY + lungeY);
+    const er = 13 * (1 + recoil * 0.22 + counter * 0.18);
+    const ex = bx + bw + 4 + er * 0.4, ey = by + 6;
+    ctx.fillStyle = 'rgba(255,255,255,0.94)';
+    ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(ex, ey, er, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(ex - er * 0.55, ey + er * 0.55);
+    ctx.lineTo(ex - er * 0.95, ey + er * 1.25);
+    ctx.lineTo(ex - er * 0.05, ey + er * 0.8);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = Math.round(er * 1.35) + 'px Nunito, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(emote, ex, ey + 1);
+    ctx.restore();
+
     ctx.restore();
   }
 
@@ -2609,6 +2838,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       flash: hitFlash > 0, groundY: GROUND_Y,
       label: `${kindLabel} · Màn ${level}`, labelColor,
       phase: level * 0.7, recoil: bossHit, lowHp: (boss.hp / boss.maxHp) < 0.3,
+      dodge: bossDodge, counter: bossCounter,
     });
   }
 

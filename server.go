@@ -29,6 +29,10 @@ func newServeMux() *http.ServeMux {
 	mux.HandleFunc("/api/score", handleScore)
 	mux.HandleFunc("/api/ranking", handleRanking)
 
+	// Bắn Cung v2 (Math Quest) leaderboard
+	mux.HandleFunc("/api/bow/score", handleBowScore)
+	mux.HandleFunc("/api/bow/ranking", handleBowRanking)
+
 	return mux
 }
 

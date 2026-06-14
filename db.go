@@ -61,6 +61,21 @@ func createSchema() error {
 	CREATE INDEX IF NOT EXISTS idx_scores_user_at ON scores(user_id, scored_at);
 	CREATE INDEX IF NOT EXISTS idx_sessions_user  ON sessions(user_id);
 
+	-- Bắn Cung v2 (Math Quest) combat-power results. One row per submission
+	-- (on death / new furthest màn / prestige). Leaderboard ranks the best
+	-- "lực chiến" (power) per user within each time window.
+	CREATE TABLE IF NOT EXISTS bow_scores (
+		id         TEXT PRIMARY KEY,
+		user_id    TEXT NOT NULL,
+		power      INTEGER NOT NULL DEFAULT 0,
+		level      INTEGER NOT NULL DEFAULT 1,
+		prestige   INTEGER NOT NULL DEFAULT 0,
+		scored_at  DATETIME NOT NULL,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_bowscores_user_at ON bow_scores(user_id, scored_at);
+
 	CREATE TABLE IF NOT EXISTS ranking_cache (
 		period     TEXT NOT NULL,
 		rank       INTEGER NOT NULL,

@@ -41,6 +41,7 @@ body {
   gap: 1rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  position: relative;
 }
 .header-brand {
   display: flex;
@@ -73,7 +74,25 @@ body {
   border-color: var(--sky);
   color: var(--sky);
 }
-.header-user { position: relative; }
+.header-user { position: relative; display: flex; align-items: center; gap: .5rem; }
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--sky);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--sky);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all .18s;
+}
+.nav-toggle:hover { background: var(--sky); color: #fff; }
+.nav-toggle.open { background: var(--sky); color: #fff; }
 .user-pill {
   display: flex;
   align-items: center;
@@ -375,6 +394,33 @@ footer {
 .modal-hint a:hover { text-decoration: underline; }
 
 /* ---------- Ranking page ---------- */
+.rank-game-switch {
+  display: flex;
+  gap: .4rem;
+  justify-content: center;
+  background: #eef2f7;
+  border-radius: 999px;
+  padding: .3rem;
+  width: fit-content;
+  margin: 0 auto 1rem;
+}
+.rank-game-btn {
+  padding: .42rem 1.2rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 800;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .18s;
+}
+.rank-game-btn.active {
+  background: #fff;
+  color: var(--sky);
+  box-shadow: 0 2px 8px rgba(15,23,42,.12);
+}
 .rank-tabs {
   display: flex;
   gap: .5rem;
@@ -1032,9 +1078,47 @@ body.kt-touch .bow2-answer-input { text-align: center; caret-color: transparent;
 @media (max-width: 560px) {
   .card { padding: 1.5rem 1rem; }
   #typing-input { font-size: 1.2rem; }
-  .app-header { gap: .5rem; }
-  .brand-name { display: none; }
-  .nav-btn { padding: .4rem .75rem; font-size: .82rem; }
+  .app-header { gap: .5rem; flex-wrap: nowrap; margin-bottom: 1rem; }
+  .brand-name { display: inline; font-size: 1.05rem; }
+
+  /* Collapse the nav behind a hamburger to declutter the portrait header */
+  .nav-toggle { display: inline-flex; }
+  .header-nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .25rem;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.16);
+    padding: .5rem;
+    min-width: 210px;
+    z-index: 120;
+    display: none;
+  }
+  .header-nav.open { display: flex; }
+  .header-nav .nav-btn {
+    width: 100%;
+    text-align: left;
+    border-radius: .6rem;
+    padding: .6rem .9rem;
+    font-size: .95rem;
+  }
+  .header-nav .nav-btn.active,
+  .header-nav .nav-btn:hover { background: #f0f9ff; border-color: transparent; }
+  /* Games submenu renders inline inside the panel (no floating dropdown) */
+  .nav-games-wrap { position: static; width: 100%; }
+  .games-dropdown {
+    position: static;
+    box-shadow: none;
+    padding: .15rem 0 .15rem .75rem;
+    min-width: 0;
+    background: transparent;
+  }
+  .games-dropdown.hidden { display: none; }
+
   #bow-game-canvas { width: 100%; height: auto; }
   #bow2-game-canvas { width: 100%; height: auto; }
   .bow2-question-text { font-size: 1.6rem; }
