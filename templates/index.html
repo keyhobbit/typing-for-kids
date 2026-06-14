@@ -477,6 +477,23 @@ function escHtml(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Compact large numbers for readability (e.g. 1234 → 1.2K, 2_500_000 → 2.5M).
+// Game-standard suffixes K/M/B/T; values < 1000 shown as-is.
+function fmtCompact(n) {
+  n = Math.round(Number(n) || 0);
+  const abs = Math.abs(n);
+  if (abs < 1000) return String(n);
+  const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+  for (const [v, s] of units) {
+    if (abs >= v) {
+      const x = n / v;
+      const str = (Math.abs(x) < 100 ? x.toFixed(1) : String(Math.round(x))).replace(/\.0$/, '');
+      return str + s;
+    }
+  }
+  return String(n);
+}
+
 // Re-mint a fresh guest session (used to recover from a stale/expired token).
 let _reauthInFlight = null;
 async function reauthGuest() {
@@ -829,7 +846,7 @@ async function loadRanking(period) {
       html += '<tr' + (isCurrent ? ' class="current-user"' : '') + '>' +
         '<td class="rank-medal">' + medal + '</td>' +
         '<td>' + escHtml(e.name) + guestTag + '</td>' +
-        '<td class="rank-score" style="text-align:right">' + e.score + '</td>' +
+        '<td class="rank-score" style="text-align:right">' + (rankGame === 'bow' ? fmtCompact(e.score) : e.score) + '</td>' +
         '</tr>';
     }
     rankBody.innerHTML = html;
@@ -1842,6 +1859,12 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     THEMES: WORLD_THEMES, NAMES: BOSS_NAMES, SHAPES: BOSS_SHAPES,
     shapeForLevel, themeForLevel: themeOf,
   };
+  // Boss defense (phòng thủ): +3% damage-reduction every 20 màn, capped at 60%.
+  // Keeps late bosses tanky without ever blocking everything — 🗡️ xuyên giáp ignores it.
+  function bossDefense(L) {
+    return Math.min(0.6, Math.floor(L / 20) * 0.03);
+  }
+
   // Procedural boss difficulty: HP grows gently; mini-boss every 10, world-boss every 100.
   function bossInfoForLevel(L) {
     let hp = 50 + (L - 1) * 8 + Math.floor((L - 1) / 10) * 30;
@@ -2103,17 +2126,17 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   }
 
   function updateUI2() {
-    bossHpEl.textContent  = Math.max(0, boss.hp);
-    scoreEl2.textContent  = score;
+    bossHpEl.textContent  = fmtCompact(Math.max(0, boss.hp));
+    scoreEl2.textContent  = fmtCompact(score);
     correctEl.textContent = correctCount;
     if (levelEl)    levelEl.textContent    = level;
-    if (damageEl)   damageEl.textContent   = Math.round(damage) + (pierce ? ' (+' + pierce + ')' : '');
+    if (damageEl)   damageEl.textContent   = fmtCompact(damage) + (pierce ? ' (+' + fmtCompact(pierce) + ')' : '');
     if (critEl)     critEl.textContent     = Math.round(critChance * 100) + '%';
     if (critMultEl) critMultEl.textContent = 'x' + critMult.toFixed(1);
     if (maxLevelEl) maxLevelEl.textContent = maxLevel;
     if (heartsEl)   heartsEl.textContent   = hearts + '/' + maxHearts;
     if (shotsEl)    shotsEl.textContent    = arrowsPerShot;
-    if (powerEl)    powerEl.textContent    = computeCombatPower();
+    if (powerEl)    powerEl.textContent    = fmtCompact(computeCombatPower());
     if (prestigeEl) prestigeEl.textContent = prestige;
   }
 
@@ -2445,13 +2468,16 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         arrow.y >= boss.y && arrow.y <= boss.y + boss.h
       ) {
         const isCrit = arrow.crit;
-        const dmg    = Math.round((isCrit ? damage * critMult : damage) + pierce);
+        // Boss defense (phòng thủ) cuts base damage; 🗡️ xuyên giáp (pierce) bypasses it.
+        const raw    = (isCrit ? damage * critMult : damage);
+        const def    = bossDefense(level);
+        const dmg    = Math.max(1, Math.round(raw * (1 - def) + pierce));
         boss.hp      -= dmg;
         hitFlash      = isCrit ? 20 : 14;
         bossHit       = 1;                  // trigger recoil/squash reaction
         shakeDuration = isCrit ? 16 : 10;
         spawnHitParticles2(arrow.x, arrow.y);
-        spawnFloater(arrow.x, arrow.y - 10, (isCrit ? '💥 ' : '') + dmg, isCrit);
+        spawnFloater(arrow.x, arrow.y - 10, (isCrit ? '💥 ' : '') + fmtCompact(dmg), isCrit);
         if (window.Sfx) { isCrit ? Sfx.crit() : Sfx.hit(); }
         arrow.active  = false;
         updateUI2();
@@ -2606,7 +2632,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.font = 'bold 13px Nunito, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillStyle = 'rgba(255,220,80,0.95)';
-    ctx.fillText(`\u2b50 ${score}   \ud83d\uddfa\ufe0f M\u00e0n ${level}/${MAX_LEVEL}   \u2694\ufe0f ${Math.round(damage)}`, 12, 12);
+    ctx.fillText(`\u2b50 ${fmtCompact(score)}   \ud83d\uddfa\ufe0f M\u00e0n ${level}/${MAX_LEVEL}   \u2694\ufe0f ${fmtCompact(damage)}`, 12, 12);
     ctx.fillStyle = 'rgba(252,165,165,0.95)';
     ctx.fillText(`\u2764\ufe0f ${hearts}/${maxHearts}   \ud83c\udff9 x${arrowsPerShot}`, 12, 30);
     const acc = qCount > 0 ? Math.round(correctCount / qCount * 100) : 100;
@@ -2780,7 +2806,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 9px Nunito, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(`HP ${Math.max(0, o.hp)}/${o.maxHp}`, bx + bw / 2, by - 47);
+      ctx.fillText(`HP ${fmtCompact(Math.max(0, o.hp))}/${fmtCompact(o.maxHp)}`, bx + bw / 2, by - 47);
     }
     // ── Label (static UI) ──
     if (o.label) {
@@ -2861,11 +2887,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     const theme      = themeOf(level);
     const kindLabel  = boss.kind === 'world' ? '👑 TRÙM THẾ GIỚI' : boss.kind === 'mini' ? '⭐ TRÙM NHỎ' : (BOSS_NAMES[boss.shape] || theme.name);
     const labelColor = boss.kind === 'world' ? '#fcd34d' : boss.kind === 'mini' ? '#fca5a5' : 'rgba(255,255,255,0.78)';
+    const def        = bossDefense(level);
+    const defLabel   = def > 0 ? ` · 🛡️${Math.round(def * 100)}%` : '';
     paintBoss({
       shape: boss.shape, x: boss.x, y: boss.y, w: boss.w, h: boss.h,
       hp: boss.hp, maxHp: boss.maxHp, theme,
       flash: hitFlash > 0, groundY: GROUND_Y,
-      label: `${kindLabel} · Màn ${level}`, labelColor,
+      label: `${kindLabel} · Màn ${level}${defLabel}`, labelColor,
       phase: level * 0.7, recoil: bossHit, lowHp: (boss.hp / boss.maxHp) < 0.3,
       dodge: bossDodge, counter: bossCounter,
     });
