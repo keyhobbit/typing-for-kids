@@ -7,7 +7,7 @@
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=7" />
+  <link rel="stylesheet" href="/static/css/style.css?v=9" />
 </head>
 <body>
 
@@ -30,6 +30,7 @@
         <button class="games-dd-item" data-game="bowgame2">🧮 Bắn Cung v2</button>
       </div>
     </div>
+    <button id="nav-sound" class="nav-btn" title="Bật/tắt âm thanh" aria-label="Bật hoặc tắt âm thanh">🔊</button>
   </nav>
   <div class="header-user">
     <button id="user-btn" class="user-pill">
@@ -114,6 +115,44 @@
     </div>
 
   </div>
+
+  <!-- ── TELEX guide (collapsible) ── -->
+  <details id="telex-guide" class="telex-guide">
+    <summary>⌨️ Cách gõ Tiếng Việt kiểu Telex <span class="telex-hint">(bấm để xem hướng dẫn)</span></summary>
+    <div class="telex-grid">
+      <div class="telex-card">
+        <h4>🎵 Dấu thanh</h4>
+        <table class="telex-table">
+          <thead><tr><th>Gõ thêm</th><th>Dấu</th><th>Ví dụ</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>s</kbd></td><td>Sắc&nbsp;( ´ )</td><td>a + s → <b>á</b></td></tr>
+            <tr><td><kbd>f</kbd></td><td>Huyền&nbsp;( ` )</td><td>a + f → <b>à</b></td></tr>
+            <tr><td><kbd>r</kbd></td><td>Hỏi&nbsp;( ̉ )</td><td>a + r → <b>ả</b></td></tr>
+            <tr><td><kbd>x</kbd></td><td>Ngã&nbsp;( ˜ )</td><td>a + x → <b>ã</b></td></tr>
+            <tr><td><kbd>j</kbd></td><td>Nặng&nbsp;( ̣ )</td><td>a + j → <b>ạ</b></td></tr>
+            <tr><td><kbd>z</kbd></td><td>Xoá dấu</td><td>á + z → <b>a</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="telex-card">
+        <h4>🔤 Nguyên âm &amp; chữ đặc biệt</h4>
+        <table class="telex-table">
+          <thead><tr><th>Gõ</th><th>Ra chữ</th><th>Gõ</th><th>Ra chữ</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>aa</kbd></td><td><b>â</b></td><td><kbd>ee</kbd></td><td><b>ê</b></td></tr>
+            <tr><td><kbd>aw</kbd></td><td><b>ă</b></td><td><kbd>oo</kbd></td><td><b>ô</b></td></tr>
+            <tr><td><kbd>ow</kbd></td><td><b>ơ</b></td><td><kbd>w</kbd></td><td><b>ư</b></td></tr>
+            <tr><td><kbd>uw</kbd></td><td><b>ư</b></td><td><kbd>dd</kbd></td><td><b>đ</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="telex-examples">
+      ✨ Ví dụ: gõ <b>Tieesng Vieejt</b> → <b>Tiếng Việt</b> &nbsp;·&nbsp;
+      <b>ddi hocj</b> → <b>đi học</b> &nbsp;·&nbsp; <b>casm own</b> → <b>cảm ơn</b>
+    </p>
+    <p class="telex-note">💡 Mẹo: gõ chữ cái trước, gõ dấu thanh ngay sau nguyên âm hoặc ở cuối từ.</p>
+  </details>
 </main>
 
 <!-- ── RANKING PAGE ── -->
@@ -166,11 +205,22 @@
 
   <div id="bow-miss-msg" class="bow-miss-msg hidden">💨 Trượt rồi!</div>
 
+  <div id="bow-touch-controls" class="bow-touch-controls" role="group" aria-label="Điều khiển bắn cung">
+    <div class="bow-touch-cluster">
+      <button type="button" id="bow-btn-left"  class="bow-touch-btn" aria-label="Di chuyển sang trái">◀</button>
+      <button type="button" id="bow-btn-right" class="bow-touch-btn" aria-label="Di chuyển sang phải">▶</button>
+    </div>
+    <div class="bow-touch-cluster">
+      <button type="button" id="bow-btn-angle-down" class="bow-touch-btn" aria-label="Hạ góc bắn">▼ Góc</button>
+      <button type="button" id="bow-btn-angle-up"   class="bow-touch-btn" aria-label="Nâng góc bắn">▲ Góc</button>
+    </div>
+    <button type="button" id="bow-btn-fire" class="bow-touch-fire" aria-label="Giữ để nạp lực, thả ra để bắn">🏹 Giữ để bắn</button>
+  </div>
+
   <div class="bow-controls-hint">
-    ◀ ▶ Di chuyển &nbsp;|&nbsp; ▲ ▼ Góc (0°–90°) &nbsp;|&nbsp;
-    <strong>Giữ Space</strong> – nạp lực &nbsp;|&nbsp;
-    <strong>Thả Space</strong> – bắn &nbsp;|&nbsp;
-    💨 Gió đổi hướng sau mỗi vòng
+    📱 Cảm ứng: bấm nút bên trên · <strong>giữ 🏹</strong> để nạp lực, thả ra để bắn &nbsp;|&nbsp;
+    ⌨️ Bàn phím: ◀ ▶ di chuyển · ▲ ▼ góc · <strong>giữ Space</strong> để bắn &nbsp;|&nbsp;
+    💨 Vòng 1 lặng gió, gió nhẹ từ vòng 2
   </div>
 </section>
 
@@ -183,6 +233,14 @@
     <button id="bow2-restart-btn" class="game-back-btn" style="border-color:var(--sun);color:var(--sun)">🔄 Chơi lại</button>
   </div>
   <div class="game-title">🧮 Bắn Cung v2 – Math Quest</div>
+
+  <div class="bow2-difficulty" id="bow2-difficulty" role="group" aria-label="Chọn độ khó">
+    <span class="bow2-diff-label">🎚️ Độ khó:</span>
+    <button type="button" class="bow2-diff-btn" data-diff="easy">😀 Dễ <small>lớp 1</small></button>
+    <button type="button" class="bow2-diff-btn active" data-diff="medium">🙂 Vừa</button>
+    <button type="button" class="bow2-diff-btn" data-diff="hard">😎 Khó</button>
+    <span class="bow2-diff-desc" id="bow2-diff-desc"></span>
+  </div>
 
   <canvas id="bow2-game-canvas" width="1000" height="500"></canvas>
 
@@ -198,12 +256,16 @@
     </div>
     <div id="bow2-feedback" class="bow2-feedback"></div>
     <div class="bow2-stats">
-      <div>❓ <span id="bow2-q-count">0</span> câu</div>
-      <div>✅ <span id="bow2-correct-count">0</span> đúng</div>
+      <div>🗺️ Màn: <span id="bow2-level">1</span>/1000</div>
+      <div>❤️ Máu: <span id="bow2-hearts">5/5</span></div>
       <div>💥 HP Boss: <span id="bow2-boss-hp">100</span></div>
+      <div>⚔️ Sát thương: <span id="bow2-damage">20</span></div>
+      <div>🏹 Mũi tên: <span id="bow2-shots">1</span></div>
+      <div>🎯 Chí mạng: <span id="bow2-crit">5%</span></div>
+      <div>✨ ST chí mạng: <span id="bow2-critmult">x2.0</span></div>
+      <div>✅ <span id="bow2-correct-count">0</span> đúng</div>
       <div>⭐ Điểm: <span id="bow2-score">0</span></div>
-      <div>🏆 Kỷ lục: <span id="bow2-highscore">0</span></div>
-      <div>🔁 Vòng: <span id="bow2-round">1</span></div>
+      <div>🏆 Cao nhất: <span id="bow2-maxlevel">1</span></div>
     </div>
   </div>
 </section>
@@ -214,6 +276,84 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // Constants & state
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// Sound effects – synthesised with the Web Audio API (no audio files needed)
+// ═══════════════════════════════════════════════════════════════════════════
+const Sfx = (function () {
+  let ctx = null, master = null;
+  let muted = localStorage.getItem('kt_muted') === '1';
+
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.5;
+      master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function tone(o) {
+    if (!ctx) return;
+    const freq = o.freq, type = o.type || 'sine', start = o.start || 0;
+    const dur = o.dur || 0.18, vol = o.vol != null ? o.vol : 0.4;
+    const t0 = ctx.currentTime + start;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (o.glideTo) osc.frequency.exponentialRampToValueAtTime(o.glideTo, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+
+  function noise(o) {
+    if (!ctx) return;
+    const dur = o.dur || 0.12, vol = o.vol != null ? o.vol : 0.4;
+    const t0 = ctx.currentTime + (o.start || 0);
+    const n = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = o.hp || 500;
+    const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass';  lpf.frequency.value = o.lp || 4000;
+    src.connect(hpf); hpf.connect(lpf); lpf.connect(g); g.connect(master);
+    src.start(t0); src.stop(t0 + dur + 0.03);
+  }
+
+  const api = {
+    shoot()   { if (muted || !ensure()) return; noise({ dur: 0.12, vol: 0.30, hp: 800, lp: 5000 }); tone({ freq: 320, glideTo: 120, type: 'sawtooth', dur: 0.14, vol: 0.15 }); },
+    hit()     { if (muted || !ensure()) return; noise({ dur: 0.16, vol: 0.40, hp: 180, lp: 2200 }); tone({ freq: 160, glideTo: 60, type: 'square', dur: 0.16, vol: 0.22 }); },
+    crit()    { if (muted || !ensure()) return; noise({ dur: 0.18, vol: 0.45, hp: 200, lp: 3200 }); tone({ freq: 880, glideTo: 1500, type: 'square', dur: 0.12, vol: 0.18 }); tone({ freq: 1320, start: 0.06, dur: 0.16, vol: 0.16, type: 'triangle' }); },
+    correct() { if (muted || !ensure()) return; [523, 659, 784].forEach((f, i) => tone({ freq: f, start: i * 0.06, dur: 0.16, vol: 0.20, type: 'triangle' })); },
+    wrong()   { if (muted || !ensure()) return; tone({ freq: 220, glideTo: 110, type: 'sawtooth', dur: 0.32, vol: 0.22 }); },
+    win()     { if (muted || !ensure()) return; [523, 659, 784, 1047].forEach((f, i) => tone({ freq: f, start: i * 0.1, dur: 0.24, vol: 0.22, type: 'square' })); },
+    levelup() { if (muted || !ensure()) return; [659, 880, 1175].forEach((f, i) => tone({ freq: f, start: i * 0.08, dur: 0.2, vol: 0.20, type: 'triangle' })); },
+    upgrade() { if (muted || !ensure()) return; [784, 1047, 1319].forEach((f, i) => tone({ freq: f, start: i * 0.05, dur: 0.18, vol: 0.18, type: 'sine' })); },
+    toggleMute() { muted = !muted; localStorage.setItem('kt_muted', muted ? '1' : '0'); if (!muted) { ensure(); api.upgrade(); } return muted; },
+    isMuted() { return muted; },
+    resume() { ensure(); },
+  };
+  return api;
+})();
+window.Sfx = Sfx;
+
+const navSound = document.getElementById('nav-sound');
+function updateSoundBtn() { if (navSound) navSound.textContent = Sfx.isMuted() ? '🔇' : '🔊'; }
+if (navSound) {
+  updateSoundBtn();
+  navSound.addEventListener('click', () => { Sfx.toggleMute(); updateSoundBtn(); });
+}
+
 const DEVICE_KEY = 'kt_device_id';
 const TOKEN_KEY  = 'kt_token';
 const USER_KEY   = 'kt_user';
@@ -899,7 +1039,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   const W = 1000, H = 500, GROUND_Y = 450;
   const GRAVITY     = 0.4;
   const MIN_POWER   = 0, MAX_POWER = 100;
-  const ARROW_DMG   = 10;
+  const ARROW_DMG   = 25;   // 4 hits to defeat the boss (kid-friendly)
 
   // ── State ──
   const player = { x: 80, y: GROUND_Y, w: 30, h: 60, speed: 3, minX: 30, maxX: 280 };
@@ -969,7 +1109,32 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     missTimer    = 0;
     score        = 0;
     round        = 1;
-    wind         = parseFloat(((Math.random() * 2 - 1) * 0.12).toFixed(3));
+    wind         = 0;            // calm first round so kids learn to aim
+    Object.keys(keys).forEach(k => { keys[k] = false; });
+    const arrowCountEl = document.getElementById('bow-arrow-count');
+    if (arrowCountEl) arrowCountEl.textContent = 0;
+    const missEl = document.getElementById('bow-miss-msg');
+    if (missEl) missEl.classList.add('hidden');
+    updateUI();
+  }
+
+  // Start the next round after a win WITHOUT wiping round/score/wind, so the
+  // difficulty curve (calm round 1 → gentle wind later) and accumulated score
+  // actually persist for the player.
+  function nextRoundV1() {
+    player.x      = 80;
+    boss.hp       = boss.maxHp;
+    bossHpEl.textContent = boss.hp;
+    arrow.active  = false;
+    currentAngle  = 30;
+    currentPower  = 0;
+    isCharging    = false;
+    gameState     = 'aiming';
+    particles     = [];
+    hitFlash      = 0;
+    winTimer      = 0;
+    arrowCount    = 0;
+    missTimer     = 0;
     Object.keys(keys).forEach(k => { keys[k] = false; });
     const arrowCountEl = document.getElementById('bow-arrow-count');
     if (arrowCountEl) arrowCountEl.textContent = 0;
@@ -995,6 +1160,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   }
 
   function fireArrow() {
+    if (window.Sfx) Sfx.shoot();
     const v0  = currentPower * 0.6;
     const rad = currentAngle * Math.PI / 180;
     // Arrow starts from the tip of the bow (right side of player)
@@ -1103,22 +1269,26 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         hitFlash     = 12;
         shakeDuration = 8;
         spawnHitParticles(arrow.x, arrow.y);
+        if (window.Sfx) Sfx.hit();
         arrow.active = false;
         updateUI();
         if (boss.hp <= 0) {
           boss.hp  = 0;
           gameState = 'win';
           winTimer  = 180; // 3 s @ 60fps
-          // Score: 1000 base, -150 per extra arrow, minimum 100
-          const roundScore = Math.max(100, 1000 - (arrowCount - 1) * 150);
-          score = roundScore;
+          // Score: 1000 base, -100 per extra arrow beyond the minimum needed, min 100
+          const minArrows  = Math.ceil(boss.maxHp / ARROW_DMG);
+          const roundScore = Math.max(100, 1000 - Math.max(0, arrowCount - minArrows) * 100);
+          score += roundScore;
           if (score > highScore) {
             highScore = score;
             localStorage.setItem('bow_highscore', String(highScore));
           }
           round++;
-          wind = parseFloat(((Math.random() * 2 - 1) * 0.12).toFixed(3));
+          // Gentle wind from round 2 onward (half the original strength)
+          wind = parseFloat(((Math.random() * 2 - 1) * 0.06).toFixed(3));
           updateUI();
+          if (window.Sfx) Sfx.win();
           launchFirework && launchFirework();
         } else {
           gameState = 'aiming';
@@ -1128,7 +1298,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
 
     if (gameState === 'win') {
       winTimer--;
-      if (winTimer <= 0) resetGame();
+      if (winTimer <= 0) nextRoundV1();
     }
 
     // Miss message countdown
@@ -1374,17 +1544,22 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   }
 
   function drawAimLine() {
-    if (gameState !== 'aiming' || currentPower <= 0) return;
-    const v0  = currentPower * 0.6;
+    if (gameState !== 'aiming') return;
+    // Show a faint guide arc even before charging so kids can pre-aim,
+    // and a brighter, accurate arc while the power is charging.
+    const charging     = currentPower > 0;
+    const previewPower = charging ? currentPower : 45;
+    const v0  = previewPower * 0.6;
     const rad = currentAngle * Math.PI / 180;
     let simVx = Math.cos(rad) * v0;
     let simVy = -Math.sin(rad) * v0;
     let sx = player.x + player.w;
     let sy = player.y - player.h * 0.75;
+    let landX = sx, landY = sy;
 
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,230,80,0.55)';
-    ctx.lineWidth   = 2;
+    ctx.strokeStyle = charging ? 'rgba(255,230,80,0.7)' : 'rgba(255,230,80,0.28)';
+    ctx.lineWidth   = charging ? 2.5 : 2;
     ctx.setLineDash([6, 8]);
     ctx.beginPath();
     ctx.moveTo(sx, sy);
@@ -1392,6 +1567,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     for (let i = 0; i < 500; i++) {
       simVx += wind;
       sx += simVx; sy += simVy; simVy += GRAVITY;
+      landX = sx; landY = sy;
       if (sy > GROUND_Y) break;
       const visible = sx >= 0 && sx <= W && sy >= 0;
       if (visible) {
@@ -1402,6 +1578,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
     ctx.stroke();
     ctx.setLineDash([]);
+    // Landing-spot marker: shows kids roughly where the arrow will come down
+    if (landX >= 0 && landX <= W) {
+      ctx.beginPath();
+      ctx.arc(landX, Math.min(landY, GROUND_Y), charging ? 7 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = charging ? 'rgba(255,210,60,0.85)' : 'rgba(255,210,60,0.35)';
+      ctx.fill();
+    }
     ctx.restore();
   }
 
@@ -1447,6 +1630,47 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.fillText('Vòng mới đang bắt đầu...', W / 2, H / 2 + 90);
     ctx.restore();
   }
+
+  // ── On-screen touch controls (tablet / phone / mouse) ──
+  // Reuse the same key-state flags the game loop already reads, so touch and
+  // keyboard behave identically.
+  function setupTouchControls() {
+    const holdKey = (id, code) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const press   = e => { e.preventDefault(); keys[code] = true;  };
+      const release = e => { e.preventDefault(); keys[code] = false; };
+      el.addEventListener('pointerdown',   press);
+      el.addEventListener('pointerup',     release);
+      el.addEventListener('pointerleave',  release);
+      el.addEventListener('pointercancel', release);
+    };
+    holdKey('bow-btn-left',       'ArrowLeft');
+    holdKey('bow-btn-right',      'ArrowRight');
+    holdKey('bow-btn-angle-up',   'ArrowUp');
+    holdKey('bow-btn-angle-down', 'ArrowDown');
+
+    const fireBtn = document.getElementById('bow-btn-fire');
+    if (fireBtn) {
+      const startCharge = e => {
+        e.preventDefault();
+        if (gameState === 'aiming') { isCharging = true; fireBtn.classList.add('charging'); }
+      };
+      const releaseFire = e => {
+        e.preventDefault();
+        fireBtn.classList.remove('charging');
+        if (gameState === 'aiming' && isCharging) {
+          isCharging = false;
+          if (currentPower > 0) fireArrow();
+        }
+      };
+      fireBtn.addEventListener('pointerdown',   startCharge);
+      fireBtn.addEventListener('pointerup',     releaseFire);
+      fireBtn.addEventListener('pointerleave',  releaseFire);
+      fireBtn.addEventListener('pointercancel', releaseFire);
+    }
+  }
+  setupTouchControls();
 })();
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1461,80 +1685,118 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   // ── Constants ──
   const W           = 1000, H = 500, GROUND_Y = 450;
   const GRAVITY     = 0.4;
-  const ARROW_DMG   = 20;   // 5 correct answers defeat the boss (100 HP)
-  const AUTO_ANGLE  = 25;   // fixed launch angle in degrees
-  const BOSS_MAX_HP = 100;
+  const AUTO_ANGLE  = 25;        // fixed launch angle in degrees
+  const MAX_LEVEL   = 1000;      // total stages (10 worlds × 100 màn)
+
+  // ── World themes (boss palette cycles every 100 levels = 1 world) ──
+  const WORLD_THEMES = [
+    { name: 'Rừng Số',   c0: '#dc2626', c1: '#7f1d1d', glow: '#dc2626' },
+    { name: 'Băng Giá',  c0: '#0ea5e9', c1: '#0c4a6e', glow: '#38bdf8' },
+    { name: 'Núi Lửa',   c0: '#f97316', c1: '#7c2d12', glow: '#fb923c' },
+    { name: 'Đầm Lầy',   c0: '#16a34a', c1: '#14532d', glow: '#4ade80' },
+    { name: 'Sa Mạc',    c0: '#ca8a04', c1: '#713f12', glow: '#facc15' },
+    { name: 'Biển Sâu',  c0: '#0891b2', c1: '#164e63', glow: '#22d3ee' },
+    { name: 'Hoàng Hôn', c0: '#db2777', c1: '#831843', glow: '#f472b6' },
+    { name: 'Vũ Trụ',    c0: '#7c3aed', c1: '#3b0764', glow: '#a78bfa' },
+    { name: 'Hư Không',  c0: '#475569', c1: '#1e293b', glow: '#94a3b8' },
+    { name: 'Hoàng Kim', c0: '#f59e0b', c1: '#92400e', glow: '#fcd34d' },
+  ];
+  // ── Boss shapes rotate every màn so kids meet a new monster each level ──
+  const BOSS_SHAPES = ['demon', 'dino', 'lion', 'jet', 'robot'];
+  const BOSS_NAMES  = { demon: 'Quái Vương', dino: 'Khủng Long', lion: 'Sư Tử', jet: 'Phi Cơ Chiến Đấu', robot: 'Người Máy' };
+  function shapeForLevel(L) { return BOSS_SHAPES[(L - 1) % BOSS_SHAPES.length]; }
+  function worldOf(L) { return Math.min(WORLD_THEMES.length - 1, Math.floor((L - 1) / 100)); }
+  function themeOf(L) { return WORLD_THEMES[worldOf(L)]; }
+  // Procedural boss difficulty: HP grows gently; mini-boss every 10, world-boss every 100.
+  function bossInfoForLevel(L) {
+    let hp = 50 + (L - 1) * 8 + Math.floor((L - 1) / 10) * 30;
+    let kind = 'normal';
+    if (L % 100 === 0)     { hp = Math.round(hp * 2.4); kind = 'world'; }
+    else if (L % 10 === 0) { hp = Math.round(hp * 1.4); kind = 'mini'; }
+    return { hp: Math.max(20, hp), kind };
+  }
 
   // ── Game objects ──
   const player = { x: 80, y: GROUND_Y, w: 30, h: 60 };
-  const boss   = { x: 850, y: GROUND_Y - 125, w: 90, h: 125, maxHp: BOSS_MAX_HP, hp: BOSS_MAX_HP };
-  const arrow  = { x: 0, y: 0, vx: 0, vy: 0, active: false };
+  const boss   = { x: 850, y: GROUND_Y - 125, w: 90, h: 125, maxHp: 50, hp: 50, kind: 'normal', shape: 'demon' };
+  const arrow  = { x: 0, y: 0, vx: 0, vy: 0, active: false, crit: false };
+
+  // ── Player run stats (Archero-style; grow via upgrades) ──
+  const BASE_DAMAGE = 20;
+  const BASE_HEARTS = 5;
+  let damage       = BASE_DAMAGE;
+  let critChance   = 0.05;   // 5%
+  let critMult     = 2.0;    // ×2
+  let arrowsPerShot = 1;     // đa mũi tên: số mũi tên mỗi lần bắn
+  let pierce        = 0;     // xuyên giáp: sát thương cộng thẳng
+  let maxHearts     = BASE_HEARTS;
+  let hearts        = BASE_HEARTS;
+  let burstRemaining = 0;    // remaining arrows in current volley
 
   // ── State ──
-  let gameState      = 'quiz';   // 'quiz' | 'shooting' | 'win'
+  let gameState      = 'quiz';   // 'quiz' | 'shooting' | 'upgrade' | 'win' | 'final'
+  let level          = 1;
+  let maxLevel       = parseInt(localStorage.getItem('bow2_maxlevel') || '1');
+  let difficulty     = localStorage.getItem('bow2_difficulty') || 'medium';
   let score          = 0;
-  let highScore      = parseInt(localStorage.getItem('bow2_highscore') || '0');
-  let round          = 1;
-  let qCount         = 0;        // total questions attempted
-  let correctCount   = 0;        // correct answers this session
-  let arrowCount     = 0;        // arrows fired this round
+  let qCount         = 0;        // total questions attempted (accuracy)
+  let correctCount   = 0;        // correct answers this run
+  let arrowCount     = 0;
   let winTimer       = 0;
   let hitFlash       = 0;
   let shakeDuration  = 0, shakeX = 0, shakeY = 0;
   let particles      = [];
+  let floaters       = [];       // floating damage numbers
   let raf            = null;
-  let currentQuestion = null;    // { text: string, answer: number }
-  let playerShootAnim = 0;       // frames for shoot recoil animation
+  let currentQuestion = null;    // { text, answer }
+  let playerShootAnim = 0;
   let feedbackClearTimer = null;
+  let pendingUpgrades = null;    // current 3 upgrade choices
 
   // ── UI element refs ──
   const questionEl  = document.getElementById('bow2-question');
   const answerEl    = document.getElementById('bow2-answer');
   const feedbackEl2 = document.getElementById('bow2-feedback');
-  const qCountEl    = document.getElementById('bow2-q-count');
   const correctEl   = document.getElementById('bow2-correct-count');
   const bossHpEl    = document.getElementById('bow2-boss-hp');
   const scoreEl2    = document.getElementById('bow2-score');
-  const hsEl2       = document.getElementById('bow2-highscore');
-  const roundEl2    = document.getElementById('bow2-round');
+  const levelEl     = document.getElementById('bow2-level');
+  const damageEl    = document.getElementById('bow2-damage');
+  const critEl      = document.getElementById('bow2-crit');
+  const critMultEl  = document.getElementById('bow2-critmult');
+  const maxLevelEl  = document.getElementById('bow2-maxlevel');
+  const heartsEl    = document.getElementById('bow2-hearts');
+  const shotsEl     = document.getElementById('bow2-shots');
   const submitBtn2  = document.getElementById('bow2-submit-btn');
 
-  // ── Math question generator ──
-  // Generates addition/subtraction (result < 100) and multiplication/division (≤ 9×9 table)
+  // ── Math question generator (difficulty-aware) ──
+  // easy   (lớp 1): + / − trong phạm vi 10, × bảng cửu chương 2–5 (không có chia)
+  // medium (vừa)  : + / − < 100, × và ÷ trong bảng ≤ 9×9
+  // hard   (khó)  : số 2 chữ số cho + / −, nhân/chia khó hơn
+  function ri(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function generateQuestion() {
-    const opIdx = Math.floor(Math.random() * 4);
-    let a, b, answer, text;
-    switch (opIdx) {
-      case 0: { // addition
-        a = Math.floor(Math.random() * 49) + 1;
-        b = Math.floor(Math.random() * Math.min(49, 99 - a)) + 1;
-        answer = a + b;
-        text   = `${a} + ${b} = ?`;
-        break;
-      }
-      case 1: { // subtraction
-        a = Math.floor(Math.random() * 89) + 11;
-        b = Math.floor(Math.random() * (a - 1)) + 1;
-        answer = a - b;
-        text   = `${a} \u2212 ${b} = ?`;
-        break;
-      }
-      case 2: { // multiplication (times table ≤ 9)
-        a = Math.floor(Math.random() * 9) + 1;
-        b = Math.floor(Math.random() * 9) + 1;
-        answer = a * b;
-        text   = `${a} \u00d7 ${b} = ?`;
-        break;
-      }
-      default: { // division (derived from times table, no remainder)
-        b      = Math.floor(Math.random() * 9) + 1;
-        answer = Math.floor(Math.random() * 9) + 1;
-        a      = b * answer;
-        text   = `${a} \u00f7 ${b} = ?`;
-        break;
-      }
+    if (difficulty === 'easy') {
+      const op = ['+', '-', 'x'][Math.floor(Math.random() * 3)];
+      if (op === '+') { const a = ri(1, 9), b = ri(1, Math.max(1, 10 - a)); return { text: `${a} + ${b} = ?`, answer: a + b }; }
+      if (op === '-') { const a = ri(2, 10), b = ri(1, a);                  return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
+      // multiplication using the 2–5 times tables
+      let f1 = ri(2, 5), f2 = ri(2, 9);
+      if (Math.random() < 0.5) { const t = f1; f1 = f2; f2 = t; }
+      return { text: `${f1} \u00d7 ${f2} = ?`, answer: f1 * f2 };
     }
-    return { text, answer };
+    if (difficulty === 'hard') {
+      const opIdx = Math.floor(Math.random() * 4);
+      if (opIdx === 0) { const a = ri(10, 99), b = ri(10, 99);   return { text: `${a} + ${b} = ?`, answer: a + b }; }
+      if (opIdx === 1) { const a = ri(30, 99), b = ri(2, a - 1); return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
+      if (opIdx === 2) { const a = ri(11, 29), b = ri(2, 9);     return { text: `${a} \u00d7 ${b} = ?`, answer: a * b }; }
+      const b = ri(2, 12), q = ri(2, 12);                        return { text: `${b * q} \u00f7 ${b} = ?`, answer: q };
+    }
+    // ── medium (default) ──
+    const opIdx = Math.floor(Math.random() * 4);
+    if (opIdx === 0) { const a = ri(1, 49), b = ri(1, Math.min(49, 99 - a)); return { text: `${a} + ${b} = ?`, answer: a + b }; }
+    if (opIdx === 1) { const a = ri(11, 99), b = ri(1, a - 1);              return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
+    if (opIdx === 2) { const a = ri(1, 9), b = ri(1, 9);                    return { text: `${a} \u00d7 ${b} = ?`, answer: a * b }; }
+    const b = ri(1, 9), q = ri(1, 9);                                      return { text: `${b * q} \u00f7 ${b} = ?`, answer: q };
   }
 
   // ── Auto-aim: compute launch speed v0 for exact hit at boss center ──
@@ -1567,9 +1829,11 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     arrow.vx = Math.cos(rad) * v0;
     arrow.vy = -Math.sin(rad) * v0;
     arrow.active = true;
+    arrow.crit   = Math.random() < critChance;
     gameState    = 'shooting';
     arrowCount++;
     setInputEnabled(false);
+    if (window.Sfx) Sfx.shoot();
   }
 
   // ── Answer submission ──
@@ -1582,13 +1846,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       return;
     }
     qCount++;
-    qCountEl.textContent = qCount;
 
     if (val === currentQuestion.answer) {
       // ── Correct ──
       correctCount++;
       correctEl.textContent = correctCount;
       answerEl.classList.add('correct');
+      if (window.Sfx) Sfx.correct();
       setFeedback2('\ud83c\udf89 Ch\u00ednh x\u00e1c! B\u1eafn!', 'correct');
       clearTimeout(feedbackClearTimer);
       playerShootAnim = 22;
@@ -1596,15 +1860,19 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       setTimeout(() => {
         answerEl.classList.remove('correct');
         answerEl.value = '';
+        burstRemaining = arrowsPerShot - 1;
         fireArrow();
       }, 260);
     } else {
       // ── Wrong ──
       answerEl.classList.add('incorrect');
       answerEl.select();
+      if (window.Sfx) Sfx.wrong();
+      loseHeart();
       setFeedback2(`\u274c Sai r\u1ed3i! \u0110\u00e1p \u00e1n \u0111\u00fang l\u00e0: ${currentQuestion.answer}`, 'incorrect');
       clearTimeout(feedbackClearTimer);
       feedbackClearTimer = setTimeout(() => {
+        if (gameState === 'gameover') return;
         answerEl.classList.remove('incorrect');
         answerEl.value = '';
         // Show new question after wrong
@@ -1634,10 +1902,14 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   function updateUI2() {
     bossHpEl.textContent  = Math.max(0, boss.hp);
     scoreEl2.textContent  = score;
-    hsEl2.textContent     = highScore;
-    roundEl2.textContent  = round;
-    qCountEl.textContent  = qCount;
     correctEl.textContent = correctCount;
+    if (levelEl)    levelEl.textContent    = level;
+    if (damageEl)   damageEl.textContent   = Math.round(damage) + (pierce ? ' (+' + pierce + ')' : '');
+    if (critEl)     critEl.textContent     = Math.round(critChance * 100) + '%';
+    if (critMultEl) critMultEl.textContent = 'x' + critMult.toFixed(1);
+    if (maxLevelEl) maxLevelEl.textContent = maxLevel;
+    if (heartsEl)   heartsEl.textContent   = hearts + '/' + maxHearts;
+    if (shotsEl)    shotsEl.textContent    = arrowsPerShot;
   }
 
   // ── Hit particles ──
@@ -1655,15 +1927,21 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
   }
 
-  // ── Next round (same session, new boss) ──
-  function nextRound() {
-    boss.hp = boss.maxHp;
-    arrow.active  = false;
-    arrowCount    = 0;
-    gameState     = 'quiz';
-    particles     = [];
-    hitFlash      = 0;
-    winTimer      = 0;
+  // ── Start a specific stage/level (sets boss from procedural difficulty) ──
+  function startLevel(L) {
+    level = L;
+    const info  = bossInfoForLevel(L);
+    boss.maxHp  = info.hp;
+    boss.hp     = info.hp;
+    boss.kind   = info.kind;
+    boss.shape  = shapeForLevel(L);
+    arrow.active = false;
+    arrowCount   = 0;
+    winTimer     = 0;
+    hitFlash     = 0;
+    gameState    = 'quiz';
+    pendingUpgrades = null;
+    hideUpgradeOverlay();
     currentQuestion = generateQuestion();
     questionEl.textContent = currentQuestion.text;
     setFeedback2('', '');
@@ -1671,27 +1949,174 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     updateUI2();
   }
 
-  // ── Full game reset ──
-  function resetGame2() {
-    boss.hp      = boss.maxHp;
-    arrow.active = false;
-    gameState    = 'quiz';
-    score        = 0;
-    round        = 1;
-    qCount       = 0;
-    correctCount = 0;
-    arrowCount   = 0;
-    particles    = [];
-    hitFlash     = 0;
-    winTimer     = 0;
-    shakeDuration = 0; shakeX = 0; shakeY = 0;
-    playerShootAnim = 0;
-    clearTimeout(feedbackClearTimer);
+  // ── Floating damage numbers ──
+  function spawnFloater(x, y, text, crit) {
+    floaters.push({ x, y, vy: -1.2, alpha: 1, text: String(text), crit: !!crit, life: 60 });
+  }
+
+  // ── Quiz / volley flow ──
+  function goToQuiz() {
+    gameState = 'quiz';
     currentQuestion = generateQuestion();
     questionEl.textContent = currentQuestion.text;
     setFeedback2('', '');
     setInputEnabled(true);
+  }
+  // After an arrow resolves (hit a still-alive boss, or missed): fire the next
+  // arrow of the volley (đa mũi tên), otherwise return control to the quiz.
+  function resolveAfterArrow() {
+    if (burstRemaining > 0) { burstRemaining--; fireArrow(); }
+    else goToQuiz();
+  }
+
+  // ── Hearts (máu) ──
+  function loseHeart() {
+    hearts = Math.max(0, hearts - 1);
     updateUI2();
+    if (hearts <= 0) showGameOver();
+  }
+  function showGameOver() {
+    gameState = 'gameover';
+    setInputEnabled(false);
+    arrow.active = false;
+    burstRemaining = 0;
+    const ov = ensureOverlay();
+    ov._title.textContent = '💔 Hết máu! Bạn đã tới màn ' + level;
+    ov._row.textContent = '';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bow2-upgrade-card up-heal';
+    const ic = document.createElement('div'); ic.className = 'uc-icon'; ic.textContent = '🔄';
+    const nm = document.createElement('div'); nm.className = 'uc-name'; nm.textContent = 'Chơi lại từ màn 1';
+    const ds = document.createElement('div'); ds.className = 'uc-desc'; ds.textContent = 'Kỷ lục cao nhất vẫn được giữ';
+    btn.appendChild(ic); btn.appendChild(nm); btn.appendChild(ds);
+    btn.addEventListener('click', () => { hideUpgradeOverlay(); resetGame2(); });
+    ov._row.appendChild(btn);
+    ov.classList.remove('hidden');
+  }
+
+  // ── Upgrade system (Archero-style: choose 1 of 3 after each boss) ──
+  const UPGRADE_POOL = [
+    { id: 'power',     icon: '💪', name: 'Tăng lực',            desc: '+20% sát thương',           apply() { damage *= 1.20; } },
+    { id: 'crit',      icon: '🎯', name: 'Chí mạng',            desc: '+8% tỉ lệ chí mạng',        apply() { critChance = Math.min(0.85, critChance + 0.08); } },
+    { id: 'critdmg',   icon: '💥', name: 'Sát thương chí mạng', desc: '+0.4x sát thương chí mạng',  apply() { critMult += 0.4; } },
+    { id: 'multishot', icon: '🏹', name: 'Đa mũi tên',          desc: '+1 mũi tên mỗi lần bắn',    cap() { return arrowsPerShot >= 5; }, apply() { arrowsPerShot = Math.min(5, arrowsPerShot + 1); } },
+    { id: 'heal',      icon: '❤️', name: 'Hồi máu',             desc: '+1 máu tối đa & hồi đầy',    apply() { maxHearts += 1; hearts = maxHearts; } },
+    { id: 'pierce',    icon: '🗡️', name: 'Xuyên giáp',          desc: '+6 sát thương xuyên',       apply() { pierce += 6; } },
+  ];
+  function pick3Upgrades() {
+    const pool = UPGRADE_POOL.filter(u => !(u.cap && u.cap()));
+    const bag = pool.slice();
+    const out = [];
+    while (out.length < 3) {
+      if (bag.length === 0) { out.push(pool[Math.floor(Math.random() * pool.length)]); continue; }
+      out.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0]);
+    }
+    return out;
+  }
+
+  let overlayEl = null;
+  function ensureOverlay() {
+    if (overlayEl) return overlayEl;
+    const page = document.getElementById('page-bowgame2');
+    overlayEl = document.createElement('div');
+    overlayEl.className = 'bow2-upgrade-overlay hidden';
+    overlayEl.setAttribute('role', 'dialog');
+    overlayEl.setAttribute('aria-label', 'Chọn nâng cấp');
+    const title = document.createElement('div');
+    title.className = 'bow2-upgrade-title';
+    const row = document.createElement('div');
+    row.className = 'bow2-upgrade-cards';
+    overlayEl.appendChild(title);
+    overlayEl.appendChild(row);
+    overlayEl._title = title;
+    overlayEl._row = row;
+    page.appendChild(overlayEl);
+    return overlayEl;
+  }
+  function showUpgradeChoices() {
+    gameState = 'upgrade';
+    setInputEnabled(false);
+    pendingUpgrades = pick3Upgrades();
+    const ov = ensureOverlay();
+    ov._title.textContent = '🎉 Qua màn ' + level + '! Chọn 1 nâng cấp:';
+    ov._row.textContent = '';
+    pendingUpgrades.forEach((up, idx) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'bow2-upgrade-card up-' + up.id;
+      const ic = document.createElement('div'); ic.className = 'uc-icon'; ic.textContent = up.icon;
+      const nm = document.createElement('div'); nm.className = 'uc-name'; nm.textContent = (idx + 1) + '. ' + up.name;
+      const ds = document.createElement('div'); ds.className = 'uc-desc'; ds.textContent = up.desc;
+      card.appendChild(ic); card.appendChild(nm); card.appendChild(ds);
+      card.addEventListener('click', () => chooseUpgrade(idx));
+      ov._row.appendChild(card);
+    });
+    ov.classList.remove('hidden');
+  }
+  function chooseUpgrade(idx) {
+    if (gameState !== 'upgrade' || !pendingUpgrades) return;
+    const up = pendingUpgrades[idx];
+    if (!up) return;
+    up.apply();
+    if (window.Sfx) Sfx.upgrade();
+    pendingUpgrades = null;
+    hideUpgradeOverlay();
+    startLevel(level + 1);
+  }
+  function hideUpgradeOverlay() {
+    if (overlayEl) overlayEl.classList.add('hidden');
+  }
+  function onUpgradeKey(e) {
+    if (gameState === 'gameover') {
+      if (e.key === 'Enter' || e.key === '1') { e.preventDefault(); hideUpgradeOverlay(); resetGame2(); }
+      return;
+    }
+    if (gameState !== 'upgrade') return;
+    if (e.key === '1' || e.key === '2' || e.key === '3') {
+      e.preventDefault();
+      chooseUpgrade(parseInt(e.key, 10) - 1);
+    }
+  }
+
+  function drawFloaters() {
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const f of floaters) {
+      ctx.globalAlpha = Math.max(0, f.alpha);
+      ctx.font = (f.crit ? 'bold 28px' : 'bold 18px') + ' Nunito, sans-serif';
+      ctx.fillStyle = f.crit ? '#fbbf24' : '#ffffff';
+      ctx.shadowColor = f.crit ? '#f97316' : '#000';
+      ctx.shadowBlur = f.crit ? 14 : 4;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  // ── Full run reset (back to màn 1, stats to base) ──
+  function resetGame2() {
+    score        = 0;
+    qCount       = 0;
+    correctCount = 0;
+    damage       = BASE_DAMAGE;
+    critChance   = 0.05;
+    critMult     = 2.0;
+    arrowsPerShot = 1;
+    pierce       = 0;
+    maxHearts    = BASE_HEARTS;
+    hearts       = BASE_HEARTS;
+    burstRemaining = 0;
+    particles    = [];
+    floaters     = [];
+    hitFlash     = 0;
+    winTimer     = 0;
+    shakeDuration = 0; shakeX = 0; shakeY = 0;
+    playerShootAnim = 0;
+    pendingUpgrades = null;
+    hideUpgradeOverlay();
+    clearTimeout(feedbackClearTimer);
+    startLevel(1);
   }
 
   // ── Main game loop ──
@@ -1713,12 +2138,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
 
       // Ground miss
       if (arrow.y >= GROUND_Y || arrow.x > W + 100) {
-        arrow.active  = false;
-        currentQuestion = generateQuestion();
-        questionEl.textContent = currentQuestion.text;
-        setFeedback2('', '');
-        gameState = 'quiz';
-        setInputEnabled(true);
+        arrow.active = false;
+        resolveAfterArrow();
       }
 
       // Boss AABB collision
@@ -1726,42 +2147,49 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         arrow.x >= boss.x && arrow.x <= boss.x + boss.w &&
         arrow.y >= boss.y && arrow.y <= boss.y + boss.h
       ) {
-        boss.hp      -= ARROW_DMG;
-        hitFlash      = 14;
-        shakeDuration = 10;
+        const isCrit = arrow.crit;
+        const dmg    = Math.round((isCrit ? damage * critMult : damage) + pierce);
+        boss.hp      -= dmg;
+        hitFlash      = isCrit ? 20 : 14;
+        shakeDuration = isCrit ? 16 : 10;
         spawnHitParticles2(arrow.x, arrow.y);
+        spawnFloater(arrow.x, arrow.y - 10, (isCrit ? '💥 ' : '') + dmg, isCrit);
+        if (window.Sfx) { isCrit ? Sfx.crit() : Sfx.hit(); }
         arrow.active  = false;
         updateUI2();
 
         if (boss.hp <= 0) {
-          boss.hp   = 0;
-          gameState = 'win';
-          winTimer  = 200;
-          // Score: base 500 + 50 per correct answer, minus 30 per wrong
-          const roundScore = Math.max(100,
-            500 + correctCount * 50 - (qCount - correctCount) * 30
-          );
-          score += roundScore;
-          if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('bow2_highscore', String(highScore));
-          }
-          round++;
+          boss.hp = 0;
+          burstRemaining = 0;
+          hearts = Math.min(maxHearts, hearts + 1);  // reward: heal 1 on clearing a màn
+          const reached = level + 1;
+          if (reached > maxLevel) { maxLevel = reached; localStorage.setItem('bow2_maxlevel', String(maxLevel)); }
+          score += Math.max(50, 100 + correctCount * 10 + level * 20);
           updateUI2();
-          typeof launchFirework === 'function' && launchFirework();
+          if (level >= MAX_LEVEL) {
+            gameState = 'final';
+            winTimer  = 600;
+            if (window.Sfx) Sfx.win();
+            typeof launchFirework === 'function' && launchFirework();
+          } else {
+            gameState = 'win';
+            winTimer  = 80;
+            if (window.Sfx) Sfx.levelup();
+            typeof launchFirework === 'function' && launchFirework();
+          }
         } else {
-          gameState = 'quiz';
-          currentQuestion = generateQuestion();
-          questionEl.textContent = currentQuestion.text;
-          setFeedback2('', '');
-          setInputEnabled(true);
+          resolveAfterArrow();
         }
       }
     }
 
     if (gameState === 'win') {
       winTimer--;
-      if (winTimer <= 0) nextRound();
+      if (winTimer <= 0) showUpgradeChoices();
+    }
+    if (gameState === 'final') {
+      winTimer--;
+      if (winTimer <= 0) resetGame2();
     }
 
     // Particle update
@@ -1771,6 +2199,9 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       p.x  += p.vx;  p.y += p.vy;
       p.alpha -= p.decay;
     }
+    // Floating damage numbers
+    floaters = floaters.filter(f => f.life > 0 && f.alpha > 0.02);
+    for (const f of floaters) { f.y += f.vy; f.vy *= 0.96; f.alpha -= 0.016; f.life--; }
     if (hitFlash > 0) hitFlash--;
 
     // ── Draw ──
@@ -1782,7 +2213,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     drawPlayer2();
     if (arrow.active) drawArrow2();
     drawParticles2();
-    if (gameState === 'win') drawWin2();
+    drawFloaters();
+    if (gameState === 'win' || gameState === 'final') drawWin2();
     ctx.restore();
 
     raf = requestAnimationFrame(loop2);
@@ -1846,11 +2278,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.font = 'bold 13px Nunito, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillStyle = 'rgba(255,220,80,0.95)';
-    ctx.fillText(`\u2b50 ${score}  \ud83c\udfc6 ${highScore}  V\u00f2ng ${round}`, 12, 12);
+    ctx.fillText(`\u2b50 ${score}   \ud83d\uddfa\ufe0f M\u00e0n ${level}/${MAX_LEVEL}   \u2694\ufe0f ${Math.round(damage)}`, 12, 12);
+    ctx.fillStyle = 'rgba(252,165,165,0.95)';
+    ctx.fillText(`\u2764\ufe0f ${hearts}/${maxHearts}   \ud83c\udff9 x${arrowsPerShot}`, 12, 30);
     const acc = qCount > 0 ? Math.round(correctCount / qCount * 100) : 100;
     ctx.fillStyle = 'rgba(134,239,172,0.9)';
     ctx.textAlign = 'right';
-    ctx.fillText(`\u2705 ${correctCount}/${qCount}  \u0110CN: ${acc}%`, W - 12, 12);
+    ctx.fillText(`\ud83c\udf0d ${themeOf(level).name}  \u2705 ${correctCount}/${qCount} \u0110CN ${acc}%`, W - 12, 12);
     ctx.restore();
   }
 
@@ -1965,6 +2399,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     const bx = boss.x, by = boss.y, bw = boss.w, bh = boss.h;
     ctx.save();
     const flash = hitFlash > 0;
+    const theme = themeOf(level);
     // ── Ground shadow ──
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath(); ctx.ellipse(bx + bw / 2, GROUND_Y + 4, bw * 0.42, 7, 0, 0, Math.PI * 2); ctx.fill();
@@ -1980,6 +2415,31 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.font = 'bold 9px Nunito, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(`HP ${Math.max(0, boss.hp)}/${boss.maxHp}`, bx + bw / 2, by - 47);
+    // ── Boss kind / world label ──
+    const kindLabel = boss.kind === 'world' ? '👑 TRÙM THẾ GIỚI' : boss.kind === 'mini' ? '⭐ TRÙM NHỎ' : (BOSS_NAMES[boss.shape] || theme.name);
+    ctx.fillStyle = boss.kind === 'world' ? '#fcd34d' : boss.kind === 'mini' ? '#fca5a5' : 'rgba(255,255,255,0.78)';
+    ctx.font = 'bold 11px Nunito, sans-serif';
+    ctx.fillText(`${kindLabel} · Màn ${level}`, bx + bw / 2, by - 70);
+    // ── Aura glow (per-world colour) ──
+    ctx.save();
+    ctx.globalAlpha = flash ? 0.5 : 0.2;
+    ctx.fillStyle = theme.glow; ctx.shadowColor = theme.glow; ctx.shadowBlur = 28;
+    ctx.beginPath(); ctx.roundRect(bx + 6, by + 8, bw - 12, bh - 12, 14); ctx.fill();
+    ctx.restore();
+    // ── Body: a different monster each màn ──
+    switch (boss.shape) {
+      case 'dino':  drawBossDino(bx, by, bw, bh, flash, theme); break;
+      case 'lion':  drawBossLion(bx, by, bw, bh, flash, theme); break;
+      case 'jet':   drawBossJet(bx, by, bw, bh, flash, theme); break;
+      case 'robot': drawBossRobot(bx, by, bw, bh, flash, theme); break;
+      default:      drawBossDemon(bx, by, bw, bh, flash, theme);
+    }
+    ctx.restore();
+  }
+
+  // ── Demon king (original boss) ──
+  function drawBossDemon(bx, by, bw, bh, flash, theme) {
+    ctx.save();
     // ── Horns ──
     ctx.fillStyle = flash ? '#ff6666' : '#991b1b';
     ctx.beginPath();
@@ -1990,10 +2450,10 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.closePath(); ctx.fill();
     // ── Body ──
     const bodyGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-    if (flash) { bodyGrad.addColorStop(0, '#ff4444'); bodyGrad.addColorStop(1, '#cc0000'); }
-    else { bodyGrad.addColorStop(0, '#dc2626'); bodyGrad.addColorStop(0.5, '#b91c1c'); bodyGrad.addColorStop(1, '#7f1d1d'); }
+    if (flash) { bodyGrad.addColorStop(0, '#ffffff'); bodyGrad.addColorStop(1, theme.c0); }
+    else { bodyGrad.addColorStop(0, theme.c0); bodyGrad.addColorStop(0.55, theme.c0); bodyGrad.addColorStop(1, theme.c1); }
     ctx.fillStyle = bodyGrad;
-    ctx.shadowColor = flash ? '#ff0000' : '#dc2626'; ctx.shadowBlur = flash ? 28 : 12;
+    ctx.shadowColor = flash ? '#ffffff' : theme.glow; ctx.shadowBlur = flash ? 28 : 12;
     ctx.beginPath(); ctx.roundRect(bx, by + 5, bw, bh - 5, 9); ctx.fill();
     ctx.shadowBlur = 0;
     // ── Crown ──
@@ -2050,6 +2510,234 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.restore();
   }
 
+  function drawStar(cx, cy, spikes, outerR, innerR) {
+    let rot = -Math.PI / 2; const step = Math.PI / spikes;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+    for (let i = 0; i < spikes; i++) {
+      rot += step; ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+      rot += step; ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ── Khủng long (dinosaur) ──
+  function drawBossDino(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh;
+    const main = flash ? '#ffffff' : '#22c55e';
+    const dark = flash ? '#e5e7eb' : '#15803d';
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Tail
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.moveTo(bx + 22, bottom - 34); ctx.lineTo(bx - 8, bottom - 10); ctx.lineTo(bx + 24, bottom - 6);
+    ctx.closePath(); ctx.fill();
+    // Legs + toes
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.roundRect(bx + 26, bottom - 18, 18, 18, 6); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(bx + 50, bottom - 18, 18, 18, 6); ctx.fill();
+    ctx.fillStyle = '#fde68a';
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.arc(bx + 30 + i * 6, bottom - 2, 2.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx + 54 + i * 6, bottom - 2, 2.2, 0, Math.PI * 2); ctx.fill();
+    }
+    // Body
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 24 : 10;
+    const g = ctx.createLinearGradient(bx, by, bx + bw, bottom);
+    g.addColorStop(0, main); g.addColorStop(1, dark);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(bx + 16, by + 26, 60, bh - 30, 26); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Belly
+    ctx.fillStyle = flash ? '#f3f4f6' : '#bbf7d0';
+    ctx.beginPath(); ctx.ellipse(cx + 4, by + 92, 19, 28, 0, 0, Math.PI * 2); ctx.fill();
+    // Back spikes
+    ctx.fillStyle = '#f97316';
+    for (let i = 0; i < 4; i++) {
+      const sk = bx + 26 + i * 14;
+      ctx.beginPath(); ctx.moveTo(sk, by + 30); ctx.lineTo(sk + 8, by + 30); ctx.lineTo(sk + 4, by + 14); ctx.closePath(); ctx.fill();
+    }
+    // Tiny arm
+    ctx.fillStyle = main;
+    ctx.beginPath(); ctx.roundRect(bx + 12, by + 74, 12, 9, 4); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(bx + 34, by + 52, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 58, by + 52, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(bx + 33, by + 54, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 57, by + 54, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(bx + 31, by + 52, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 55, by + 52, 1.6, 0, Math.PI * 2); ctx.fill();
+    // Nostrils
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.arc(bx + 40, by + 66, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 52, by + 66, 1.8, 0, Math.PI * 2); ctx.fill();
+    // Mouth + teeth
+    ctx.fillStyle = '#7f1d1d';
+    ctx.beginPath(); ctx.ellipse(cx, by + 78, 18, 9, 0, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 4; i++) {
+      const tx = cx - 15 + i * 10;
+      ctx.beginPath(); ctx.moveTo(tx, by + 74); ctx.lineTo(tx + 8, by + 74); ctx.lineTo(tx + 4, by + 82); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── Sư tử (lion) ──
+  function drawBossLion(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh, faceY = by + 46, faceR = 30;
+    ctx.save();
+    // Body (lower)
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 22 : 8;
+    ctx.fillStyle = flash ? '#ffffff' : '#d97706';
+    ctx.beginPath(); ctx.roundRect(bx + 24, by + 74, 42, bh - 74, 16); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Paws
+    ctx.fillStyle = flash ? '#f3f4f6' : '#f59e0b';
+    ctx.beginPath(); ctx.roundRect(bx + 26, bottom - 12, 16, 12, 6); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(bx + 50, bottom - 12, 16, 12, 6); ctx.fill();
+    // Mane (ring of triangles)
+    ctx.fillStyle = flash ? '#e5e7eb' : '#92400e';
+    for (let i = 0; i < 13; i++) {
+      const a = (Math.PI * 2 / 13) * i, r1 = faceR - 2, r2 = faceR + 16;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a - 0.22) * r1, faceY + Math.sin(a - 0.22) * r1);
+      ctx.lineTo(cx + Math.cos(a) * r2,        faceY + Math.sin(a) * r2);
+      ctx.lineTo(cx + Math.cos(a + 0.22) * r1, faceY + Math.sin(a + 0.22) * r1);
+      ctx.closePath(); ctx.fill();
+    }
+    // Ears
+    ctx.fillStyle = flash ? '#ffffff' : '#b45309';
+    ctx.beginPath(); ctx.arc(cx - 22, faceY - 22, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 22, faceY - 22, 9, 0, Math.PI * 2); ctx.fill();
+    // Face
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 18 : 6;
+    ctx.fillStyle = flash ? '#ffffff' : '#fcd34d';
+    ctx.beginPath(); ctx.arc(cx, faceY, faceR, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Muzzle
+    ctx.fillStyle = flash ? '#f3f4f6' : '#fde68a';
+    ctx.beginPath(); ctx.ellipse(cx, faceY + 12, 17, 13, 0, 0, Math.PI * 2); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(cx - 11, faceY - 4, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 11, faceY - 4, 4, 0, Math.PI * 2); ctx.fill();
+    // Nose
+    ctx.fillStyle = '#7c2d12';
+    ctx.beginPath(); ctx.moveTo(cx - 5, faceY + 6); ctx.lineTo(cx + 5, faceY + 6); ctx.lineTo(cx, faceY + 12); ctx.closePath(); ctx.fill();
+    // Mouth
+    ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(cx - 5, faceY + 14, 5, 0, Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + 5, faceY + 14, 5, 0, Math.PI); ctx.stroke();
+    // Whiskers
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.5;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath(); ctx.moveTo(cx - 10, faceY + 12 + i * 3); ctx.lineTo(cx - 30, faceY + 10 + i * 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + 10, faceY + 12 + i * 3); ctx.lineTo(cx + 30, faceY + 10 + i * 6); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ── Máy bay chiến đấu (fighter jet, facing the archer) ──
+  function drawBossJet(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, midY = by + 58;
+    const body = flash ? '#ffffff' : '#94a3b8';
+    const dark = flash ? '#e5e7eb' : '#475569';
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Exhaust flames (back = right)
+    const fl = 8 + (Math.floor(Date.now() / 80) % 4) * 2;
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath(); ctx.moveTo(bx + bw - 10, midY - 7); ctx.lineTo(bx + bw + 10 + fl, midY); ctx.lineTo(bx + bw - 10, midY + 7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fde047';
+    ctx.beginPath(); ctx.moveTo(bx + bw - 10, midY - 4); ctx.lineTo(bx + bw + 2 + fl, midY); ctx.lineTo(bx + bw - 10, midY + 4); ctx.closePath(); ctx.fill();
+    // Tail fin (up)
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.moveTo(bx + bw - 30, midY - 8); ctx.lineTo(bx + bw - 16, midY - 44); ctx.lineTo(bx + bw - 10, midY - 8); ctx.closePath(); ctx.fill();
+    // Main wing (down)
+    ctx.beginPath(); ctx.moveTo(bx + 34, midY + 6); ctx.lineTo(bx + 58, midY + 46); ctx.lineTo(bx + 80, midY + 46); ctx.lineTo(bx + 62, midY + 8); ctx.closePath(); ctx.fill();
+    // Fuselage
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 22 : 10;
+    const g = ctx.createLinearGradient(bx, midY - 14, bx, midY + 14);
+    g.addColorStop(0, body); g.addColorStop(1, dark);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(bx + 14, midY - 13, bw - 26, 26, 12); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Nose cone (left, aimed at player)
+    ctx.fillStyle = flash ? '#fca5a5' : '#ef4444';
+    ctx.beginPath(); ctx.moveTo(bx + 16, midY - 12); ctx.lineTo(bx - 8, midY); ctx.lineTo(bx + 16, midY + 12); ctx.closePath(); ctx.fill();
+    // Cockpit
+    ctx.fillStyle = flash ? '#bae6fd' : '#38bdf8';
+    ctx.beginPath(); ctx.ellipse(bx + 36, midY - 10, 13, 8, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(bx + 32, midY - 11, 4, 3, 0, Math.PI, Math.PI * 2); ctx.fill();
+    // Roundel star
+    ctx.fillStyle = '#ef4444';
+    drawStar(cx + 8, midY, 5, 7, 3.2);
+    // Missile under wing
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath(); ctx.roundRect(bx + 44, midY + 40, 22, 6, 3); ctx.fill();
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.moveTo(bx + 44, midY + 40); ctx.lineTo(bx + 38, midY + 43); ctx.lineTo(bx + 44, midY + 46); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // ── Người máy (robot) ──
+  function drawBossRobot(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh;
+    const metal = flash ? '#ffffff' : '#94a3b8';
+    const dark  = flash ? '#e5e7eb' : '#64748b';
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Antenna
+    ctx.strokeStyle = dark; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx, by + 12); ctx.lineTo(cx, by - 2); ctx.stroke();
+    ctx.fillStyle = '#ef4444'; ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(cx, by - 5, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    // Legs
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.roundRect(bx + 28, bottom - 16, 12, 16, 4); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(bx + 50, bottom - 16, 12, 16, 4); ctx.fill();
+    // Body
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 22 : 8;
+    const g = ctx.createLinearGradient(bx, by, bx + bw, bottom);
+    g.addColorStop(0, metal); g.addColorStop(1, dark);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(bx + 14, by + 58, bw - 28, bh - 72, 10); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Arms
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.roundRect(bx + 4, by + 62, 12, 34, 5); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(bx + bw - 16, by + 62, 12, 34, 5); ctx.fill();
+    // Head
+    ctx.fillStyle = metal;
+    ctx.beginPath(); ctx.roundRect(bx + 20, by + 12, bw - 40, 44, 8); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#22d3ee'; ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(bx + 34, by + 30, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + bw - 34, by + 30, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Mouth grid
+    ctx.fillStyle = '#334155';
+    ctx.beginPath(); ctx.roundRect(bx + 32, by + 44, bw - 64, 8, 2); ctx.fill();
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++) { const gx = bx + 32 + i * ((bw - 64) / 5); ctx.beginPath(); ctx.moveTo(gx, by + 44); ctx.lineTo(gx, by + 52); ctx.stroke(); }
+    // Chest screen + heart + buttons
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.roundRect(bx + 28, by + 66, bw - 56, 22, 4); ctx.fill();
+    ctx.fillStyle = '#4ade80'; ctx.font = 'bold 12px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('\u2665', cx, by + 77);
+    const bc = ['#ef4444', '#facc15', '#22d3ee'];
+    for (let i = 0; i < 3; i++) { ctx.fillStyle = bc[i]; ctx.beginPath(); ctx.arc(bx + 30 + i * 14, by + 98, 3.5, 0, Math.PI * 2); ctx.fill(); }
+    // Bolts
+    ctx.fillStyle = '#fbbf24';
+    [[bx + 18, by + 62], [bx + bw - 18, by + 62], [bx + 18, bottom - 18], [bx + bw - 18, bottom - 18]].forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], 2.5, 0, Math.PI * 2); ctx.fill(); });
+    ctx.restore();
+  }
+
   function drawArrow2() {
     ctx.save();
     ctx.translate(arrow.x, arrow.y);
@@ -2080,20 +2768,19 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   }
 
   function drawWin2() {
-    const t = Math.min(1, (200 - winTimer) / 25);
+    const isFinal = gameState === 'final';
+    const total = isFinal ? 600 : 80;
+    const t = Math.min(1, (total - winTimer) / 25);
     ctx.save();
     ctx.globalAlpha = t;
-    ctx.font = 'bold 68px Nunito, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 56px Nunito, sans-serif';
     ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 32;
     ctx.fillStyle = '#ffd93d';
-    ctx.fillText('\ud83c\udf89 TH\u1eafNG! \ud83c\udf89', W/2, H/2 - 42);
-    ctx.font = '26px Nunito, sans-serif';
+    ctx.fillText(isFinal ? '\ud83c\udfc6 V\u00d4 \u0110\u1ecaCH! \ud83c\udfc6' : '\ud83c\udf89 QUA M\u00c0N! \ud83c\udf89', W / 2, H / 2 - 40);
+    ctx.font = '24px Nunito, sans-serif';
     ctx.fillStyle = '#86efac'; ctx.shadowColor = '#86efac'; ctx.shadowBlur = 10;
-    ctx.fillText(`+${Math.max(100, 500 + correctCount*50 - (qCount-correctCount)*30)} \u0111i\u1ec3m`, W/2, H/2 + 14);
-    ctx.font = '20px Nunito, sans-serif';
-    ctx.fillStyle = '#a5f3fc'; ctx.shadowColor = '#a5f3fc'; ctx.shadowBlur = 6;
-    ctx.fillText('V\u00f2ng m\u1edbi s\u1eafp b\u1eaft \u0111\u1ea7u...', W/2, H/2 + 50);
+    ctx.fillText(isFinal ? ('Ho\u00e0n th\u00e0nh ' + MAX_LEVEL + ' m\u00e0n!') : ('\u0110\u00e3 qua m\u00e0n ' + level + ' \u2192 ch\u1ecdn n\u00e2ng c\u1ea5p'), W / 2, H / 2 + 16);
     ctx.restore();
   }
 
@@ -2102,6 +2789,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     resetGame2();
     answerEl.addEventListener('keydown', onAnswerKeyDown);
     submitBtn2.addEventListener('click', onSubmit);
+    window.addEventListener('keydown', onUpgradeKey);
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(loop2);
   }
@@ -2109,9 +2797,45 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   function bow2GameStop() {
     answerEl.removeEventListener('keydown', onAnswerKeyDown);
     submitBtn2.removeEventListener('click', onSubmit);
+    window.removeEventListener('keydown', onUpgradeKey);
+    hideUpgradeOverlay();
     clearTimeout(feedbackClearTimer);
     if (raf) { cancelAnimationFrame(raf); raf = null; }
   }
+
+  // ── Difficulty selector ──
+  const diffWrap   = document.getElementById('bow2-difficulty');
+  const diffDescEl = document.getElementById('bow2-diff-desc');
+  const DIFF_DESC  = {
+    easy:   '😀 Lớp 1: cộng/trừ trong 10 · nhân bảng cửu chương 2–5',
+    medium: '🙂 Vừa: cộng/trừ < 100 · nhân & chia trong bảng ≤ 9',
+    hard:   '😎 Khó: số 2 chữ số · nhân/chia khó hơn',
+  };
+  function applyDifficultyUI() {
+    if (diffWrap) diffWrap.querySelectorAll('.bow2-diff-btn').forEach(b => b.classList.toggle('active', b.dataset.diff === difficulty));
+    if (diffDescEl) diffDescEl.textContent = DIFF_DESC[difficulty] || '';
+  }
+  function setDifficulty(d) {
+    if (!DIFF_DESC[d]) return;
+    difficulty = d;
+    localStorage.setItem('bow2_difficulty', d);
+    applyDifficultyUI();
+    if (window.Sfx) Sfx.upgrade();
+    // Apply immediately to the current question while playing
+    if (gameState === 'quiz') {
+      currentQuestion = generateQuestion();
+      questionEl.textContent = currentQuestion.text;
+      answerEl.value = '';
+      setFeedback2('', '');
+      if (answerEl.focus) answerEl.focus();
+    }
+  }
+  if (diffWrap) {
+    diffWrap.querySelectorAll('.bow2-diff-btn').forEach(b => {
+      b.addEventListener('click', () => setDifficulty(b.dataset.diff));
+    });
+  }
+  applyDifficultyUI();
 
   window.bow2GameStart = bow2GameStart;
   window.bow2GameStop  = bow2GameStop;
