@@ -477,11 +477,40 @@ function escHtml(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Re-mint a fresh guest session (used to recover from a stale/expired token).
+let _reauthInFlight = null;
+async function reauthGuest() {
+  const deviceID = localStorage.getItem(DEVICE_KEY) || generateUUID();
+  localStorage.setItem(DEVICE_KEY, deviceID);
+  const res = await fetch('/api/auth/guest', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({device_id: deviceID}),
+  });
+  if (!res.ok) throw new Error('reauth failed');
+  const data = await res.json();
+  curUser = data.user; curToken = data.token;
+  saveSession(); updateUserUI();
+  return curToken;
+}
+
 async function apiFetch(path, opts) {
   opts = opts || {};
   const headers = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
   if (curToken) headers['Authorization'] = 'Bearer ' + curToken;
-  return fetch(path, Object.assign({}, opts, {headers}));
+  let res = await fetch(path, Object.assign({}, opts, {headers}));
+  // Auto-recover from a stale token: re-mint a guest session once, then retry.
+  // Only for guests — a registered user with an expired session should re-login.
+  if (res.status === 401 && (!curUser || curUser.is_guest)) {
+    try {
+      _reauthInFlight = _reauthInFlight || reauthGuest().finally(() => { _reauthInFlight = null; });
+      await _reauthInFlight;
+      const h2 = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
+      if (curToken) h2['Authorization'] = 'Bearer ' + curToken;
+      res = await fetch(path, Object.assign({}, opts, {headers: h2}));
+    } catch (_) { /* keep the original 401 response */ }
+  }
+  return res;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
