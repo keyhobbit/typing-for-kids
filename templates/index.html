@@ -7,7 +7,7 @@
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=12" />
+  <link rel="stylesheet" href="/static/css/style.css?v=14" />
 </head>
 <body>
 
@@ -246,6 +246,7 @@
     <p class="bow2-diff-hint">Bấm tên phép để bật/tắt · chọn Dễ/Vừa/Khó cho từng phép. Tắt phép bé chưa học (vd phép chia).</p>
   </details>
 
+  <div class="bow2-play-area">
   <canvas id="bow2-game-canvas" width="1000" height="500"></canvas>
 
   <div class="bow2-math-panel">
@@ -288,6 +289,7 @@
       <div>⭐ Điểm: <span id="bow2-score">0</span></div>
       <div>🏆 Cao nhất: <span id="bow2-maxlevel">1</span></div>
     </div>
+  </div>
   </div>
 </section>
 
@@ -1026,6 +1028,7 @@ function showBowGame2() {
   pageRank.style.display    = 'none';  pageRank.classList.add('hidden');
   pageBowgame.style.display = 'none';  pageBowgame.classList.add('hidden');
   pageBowgame2.style.display = 'flex'; pageBowgame2.classList.remove('hidden');
+  document.body.classList.add('kt-bow2-active');
   navHome.classList.remove('active');
   navRank.classList.remove('active');
   navGames.classList.add('active');
@@ -1035,6 +1038,7 @@ function showBowGame2() {
 document.getElementById('bow2-back-btn').addEventListener('click', () => {
   bow2GameStop();
   pageBowgame2.style.display = 'none'; pageBowgame2.classList.add('hidden');
+  document.body.classList.remove('kt-bow2-active');
   showPage('home');
   navGames.classList.remove('active');
   navHome.classList.add('active');
@@ -1064,7 +1068,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
 
   // ── State ──
   const player = { x: 80, y: GROUND_Y, w: 30, h: 60, speed: 3, minX: 30, maxX: 280 };
-  const boss   = { x: 860, y: GROUND_Y - 120, w: 80, h: 120, maxHp: 100, hp: 100 };
+  // Sized to match Bắn Cung v2 so the shared monster renderer looks identical.
+  const boss   = { x: 850, y: GROUND_Y - 125, w: 90, h: 125, maxHp: 100, hp: 100, shape: 'demon' };
   const arrow  = { x: 0, y: 0, vx: 0, vy: 0, active: false, angle: 0 };
 
   let gameState    = 'aiming'; // 'aiming' | 'flying' | 'win'
@@ -1074,6 +1079,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   let chargeDir    = 1;        // oscillate for auto-charge visual
   let raf          = null;
   let hitFlash     = 0;        // frames to flash boss on hit
+  let bossHit      = 0;        // 0..1 recoil reaction, set to 1 on hit then decays
   let winTimer     = 0;
   let shakeX       = 0, shakeY = 0; // screen shake
   let shakeDuration = 0;
@@ -1125,11 +1131,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     gameState    = 'aiming';
     particles    = [];
     hitFlash     = 0;
+    bossHit      = 0;
     winTimer     = 0;
     arrowCount   = 0;
     missTimer    = 0;
     score        = 0;
     round        = 1;
+    boss.shape   = bossShapeFor(round);
     wind         = 0;            // calm first round so kids learn to aim
     Object.keys(keys).forEach(k => { keys[k] = false; });
     const arrowCountEl = document.getElementById('bow-arrow-count');
@@ -1153,9 +1161,11 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     gameState     = 'aiming';
     particles     = [];
     hitFlash      = 0;
+    bossHit       = 0;
     winTimer      = 0;
     arrowCount    = 0;
     missTimer     = 0;
+    boss.shape    = bossShapeFor(round);   // round already advanced before nextRoundV1
     Object.keys(keys).forEach(k => { keys[k] = false; });
     const arrowCountEl = document.getElementById('bow-arrow-count');
     if (arrowCountEl) arrowCountEl.textContent = 0;
@@ -1230,6 +1240,30 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
   }
 
+  // Defeat reaction: the boss bursts into a shower of sparks (đồng bộ với v2).
+  function spawnBossExplosion() {
+    const cx = boss.x + boss.w / 2, cy = boss.y + boss.h / 2;
+    const colors = ['#fde047','#fb923c','#ef4444','#ffffff','#f472b6','#a855f7'];
+    for (let i = 0; i < 46; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 3 + Math.random() * 8;
+      particles.push({
+        x: cx + (Math.random() - 0.5) * boss.w * 0.5,
+        y: cy + (Math.random() - 0.5) * boss.h * 0.5,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.5,
+        alpha: 1, color: colors[i % colors.length],
+        size: 4 + Math.random() * 6, decay: 0.016 + Math.random() * 0.018,
+      });
+    }
+  }
+
+  // Pick the monster for a round, reusing v2's shared catalogue so both games
+  // cycle through the same creatures (demon → dino → lion → …).
+  function bossShapeFor(r) {
+    const meta = window.KTBossMeta;
+    return (meta && meta.shapeForLevel) ? meta.shapeForLevel(r) : 'demon';
+  }
+
   function loop() {
     // Screen shake
     if (shakeDuration > 0) {
@@ -1288,6 +1322,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       ) {
         boss.hp -= ARROW_DMG;
         hitFlash     = 12;
+        bossHit      = 1;          // trigger recoil/squash reaction
         shakeDuration = 8;
         spawnHitParticles(arrow.x, arrow.y);
         if (window.Sfx) Sfx.hit();
@@ -1295,6 +1330,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         updateUI();
         if (boss.hp <= 0) {
           boss.hp  = 0;
+          spawnBossExplosion();    // defeat reaction: pop into sparks
+          shakeDuration = 20;
           gameState = 'win';
           winTimer  = 180; // 3 s @ 60fps
           // Score: 1000 base, -100 per extra arrow beyond the minimum needed, min 100
@@ -1340,6 +1377,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
 
     if (hitFlash > 0) hitFlash--;
+    if (bossHit > 0.01) bossHit *= 0.86; else bossHit = 0;
 
     // ── Draw ──
     ctx.save();
@@ -1468,61 +1506,51 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.restore();
   }
 
+  // Reuse Bắn Cung v2's shared animated + reactive monster renderer so both
+  // games look identical. Falls back to a simple sprite if it's unavailable.
   function drawBoss() {
+    if (boss.hp <= 0) return;   // hidden while the defeat explosion plays
+    const meta  = window.KTBossMeta;
+    const shape = boss.shape || 'demon';
+    const theme = (meta && meta.themeForLevel) ? meta.themeForLevel(round)
+                : { name: '', c0: '#e11d48', c1: '#9f1239', glow: '#e11d48' };
+    const name  = (meta && meta.NAMES && meta.NAMES[shape]) || 'Quái Vương';
+    if (typeof window.KTPaintBoss === 'function') {
+      window.KTPaintBoss(ctx, {
+        shape, x: boss.x, y: boss.y, w: boss.w, h: boss.h,
+        hp: boss.hp, maxHp: boss.maxHp, theme,
+        flash: hitFlash > 0, groundY: GROUND_Y,
+        label: `${name} · Vòng ${round}`, labelColor: 'rgba(255,255,255,0.82)',
+        phase: round * 0.7, recoil: bossHit, lowHp: (boss.hp / boss.maxHp) < 0.3,
+      });
+      return;
+    }
+    drawBossFallback();
+  }
+
+  function drawBossFallback() {
     const bx = boss.x, by = boss.y, bw = boss.w, bh = boss.h;
     ctx.save();
-    // Flash red on hit
     const flash = hitFlash > 0;
     ctx.shadowColor = flash ? '#ff0000' : '#e11d48';
     ctx.shadowBlur  = flash ? 30 : 14;
-    // Body
     const grad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-    if (flash) {
-      grad.addColorStop(0, '#ff4444');
-      grad.addColorStop(1, '#ff0000');
-    } else {
-      grad.addColorStop(0, '#e11d48');
-      grad.addColorStop(1, '#9f1239');
-    }
+    if (flash) { grad.addColorStop(0, '#ff4444'); grad.addColorStop(1, '#ff0000'); }
+    else { grad.addColorStop(0, '#e11d48'); grad.addColorStop(1, '#9f1239'); }
     ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, bw, bh, 12);
-    ctx.fill();
-    // Eyes
-    ctx.fillStyle = '#fbbf24';
-    ctx.shadowColor = '#fbbf24';
-    ctx.shadowBlur  = 8;
-    ctx.beginPath();
-    ctx.arc(bx + 22, by + 24, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(bx + 58, by + 24, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#1e293b';
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.arc(bx + 23, by + 24, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(bx + 59, by + 24, 3, 0, Math.PI * 2);
-    ctx.fill();
-    // Mouth (menacing grin)
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth   = 3;
-    ctx.beginPath();
-    ctx.arc(bx + 40, by + 50, 16, 0.2, Math.PI - 0.2);
-    ctx.stroke();
-    // HP bar above boss
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 12); ctx.fill();
+    ctx.fillStyle = '#fbbf24'; ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(bx + 22, by + 24, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 58, by + 24, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1e293b'; ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(bx + 23, by + 24, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 59, by + 24, 3, 0, Math.PI * 2); ctx.fill();
     const hpPct = Math.max(0, boss.hp / boss.maxHp);
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath();
-    ctx.roundRect(bx - 5, by - 20, bw + 10, 12, 6);
-    ctx.fill();
+    ctx.beginPath(); ctx.roundRect(bx - 5, by - 20, bw + 10, 12, 6); ctx.fill();
     const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#fbbf24' : '#ef4444';
     ctx.fillStyle = hpColor;
-    ctx.beginPath();
-    ctx.roundRect(bx - 3, by - 18, (bw + 6) * hpPct, 8, 4);
-    ctx.fill();
+    ctx.beginPath(); ctx.roundRect(bx - 3, by - 18, (bw + 6) * hpPct, 8, 4); ctx.fill();
     ctx.restore();
   }
 
@@ -1701,7 +1729,9 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {
   const canvas = document.getElementById('bow2-game-canvas');
-  const ctx    = canvas.getContext('2d');
+  // `ctx` is a `let` so the shared boss renderer (window.KTPaintBoss) can
+  // temporarily retarget it to another canvas (e.g. Bắn Cung v1) and restore it.
+  let ctx      = canvas.getContext('2d');
 
   // ── Constants ──
   const W           = 1000, H = 500, GROUND_Y = 450;
@@ -1728,6 +1758,12 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   function shapeForLevel(L) { return BOSS_SHAPES[(L - 1) % BOSS_SHAPES.length]; }
   function worldOf(L) { return Math.min(WORLD_THEMES.length - 1, Math.floor((L - 1) / 100)); }
   function themeOf(L) { return WORLD_THEMES[worldOf(L)]; }
+  // ── Share the boss palette / monster catalogue with Bắn Cung v1 so both
+  //    games show the same animated, reactive monsters (UI đồng bộ). ──
+  window.KTBossMeta = {
+    THEMES: WORLD_THEMES, NAMES: BOSS_NAMES, SHAPES: BOSS_SHAPES,
+    shapeForLevel, themeForLevel: themeOf,
+  };
   // Procedural boss difficulty: HP grows gently; mini-boss every 10, world-boss every 100.
   function bossInfoForLevel(L) {
     let hp = 50 + (L - 1) * 8 + Math.floor((L - 1) / 10) * 30;
@@ -1788,6 +1824,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   let arrowCount     = 0;
   let winTimer       = 0;
   let hitFlash       = 0;
+  let bossHit        = 0;        // 0..1 recoil reaction, set to 1 on hit then decays
   let shakeDuration  = 0, shakeX = 0, shakeY = 0;
   let particles      = [];
   let floaters       = [];       // floating damage numbers
@@ -1976,6 +2013,23 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     }
   }
 
+  // ── Defeat reaction: the boss bursts into a shower of stars/sparks ──
+  function spawnBossExplosion2() {
+    const cx = boss.x + boss.w / 2, cy = boss.y + boss.h / 2;
+    const colors = ['#fde047','#fb923c','#ef4444','#ffffff','#f472b6','#a855f7'];
+    for (let i = 0; i < 48; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 3 + Math.random() * 8;
+      particles.push({
+        x: cx + (Math.random() - 0.5) * boss.w * 0.5,
+        y: cy + (Math.random() - 0.5) * boss.h * 0.5,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.5,
+        alpha: 1, color: colors[i % colors.length],
+        size: 4 + Math.random() * 6, decay: 0.016 + Math.random() * 0.018,
+      });
+    }
+  }
+
   // ── Start a specific stage/level (sets boss from procedural difficulty) ──
   function startLevel(L) {
     level = L;
@@ -1988,6 +2042,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     arrowCount   = 0;
     winTimer     = 0;
     hitFlash     = 0;
+    bossHit      = 0;
     gameState    = 'quiz';
     pendingUpgrades = null;
     hideUpgradeOverlay();
@@ -2159,6 +2214,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     particles    = [];
     floaters     = [];
     hitFlash     = 0;
+    bossHit      = 0;
     winTimer     = 0;
     shakeDuration = 0; shakeX = 0; shakeY = 0;
     playerShootAnim = 0;
@@ -2200,6 +2256,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         const dmg    = Math.round((isCrit ? damage * critMult : damage) + pierce);
         boss.hp      -= dmg;
         hitFlash      = isCrit ? 20 : 14;
+        bossHit       = 1;                  // trigger recoil/squash reaction
         shakeDuration = isCrit ? 16 : 10;
         spawnHitParticles2(arrow.x, arrow.y);
         spawnFloater(arrow.x, arrow.y - 10, (isCrit ? '💥 ' : '') + dmg, isCrit);
@@ -2210,6 +2267,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
         if (boss.hp <= 0) {
           boss.hp = 0;
           burstRemaining = 0;
+          spawnBossExplosion2();            // defeat reaction: pop into sparks
+          shakeDuration = 22;
           hearts = Math.min(maxHearts, hearts + 1);  // reward: heal 1 on clearing a màn
           const reached = level + 1;
           if (reached > maxLevel) { maxLevel = reached; localStorage.setItem('bow2_maxlevel', String(maxLevel)); }
@@ -2252,6 +2311,7 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     floaters = floaters.filter(f => f.life > 0 && f.alpha > 0.02);
     for (const f of floaters) { f.y += f.vy; f.vy *= 0.96; f.alpha -= 0.016; f.life--; }
     if (hitFlash > 0) hitFlash--;
+    if (bossHit > 0.01) bossHit *= 0.86; else bossHit = 0;
 
     // ── Draw ──
     ctx.save();
@@ -2444,39 +2504,78 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.restore();
   }
 
-  function drawBoss2() {
-    const bx = boss.x, by = boss.y, bw = boss.w, bh = boss.h;
+  // ── Shared boss painter: idle animation + reactions (hit recoil, low-HP
+  //    panic tremble) + monster art. Draws onto the current module `ctx`, which
+  //    window.KTPaintBoss can retarget so Bắn Cung v1 reuses the exact same look. ──
+  function paintBoss(o) {
+    const bx = o.x, by = o.y, bw = o.w, bh = o.h;
+    const flash   = !!o.flash;
+    const theme   = o.theme;
+    const groundY = (o.groundY != null) ? o.groundY : (by + bh);
+    const hpPct   = (o.maxHp > 0) ? Math.max(0, o.hp / o.maxHp) : 1;
+
+    // Idle animation (alive!): bob up/down, sway left/right, breathe + tilt.
+    const at = performance.now() / 1000;
+    const ph = o.phase || 0;
+    let bobY    = Math.sin(at * 2.6 + ph) * 9;
+    let swayX   = Math.sin(at * 1.7 + ph) * 10;
+    let tilt    = Math.sin(at * 1.7 + ph) * 0.06;
+    let breathe = 1 + Math.sin(at * 3.0 + ph) * 0.045;
+
+    // Reaction · panic: when HP < 30% the boss trembles & its aura flickers.
+    const low = !!o.lowHp || (hpPct > 0 && hpPct < 0.3);
+    if (low) {
+      const tr = at * 40;
+      swayX += Math.sin(tr) * 3.4;
+      bobY  += Math.cos(tr * 1.3) * 2.2;
+      tilt  += Math.sin(tr * 0.9) * 0.05;
+    }
+
+    // Reaction · hit recoil: knocked away from the archer + squash/stretch.
+    const recoil = Math.max(0, Math.min(1, o.recoil || 0));
+    const knockX = recoil * 16;
+    const sqX    = 1 + recoil * 0.14;
+    const sqY    = 1 - recoil * 0.12;
+    const leanBk = recoil * 0.13;
+
     ctx.save();
-    const flash = hitFlash > 0;
-    const theme = themeOf(level);
-    // ── Ground shadow ──
+    // ── Ground shadow (stays on ground; smaller when the boss hops up) ──
+    const shScale = 1 - Math.max(0, -bobY) * 0.02;
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath(); ctx.ellipse(bx + bw / 2, GROUND_Y + 4, bw * 0.42, 7, 0, 0, Math.PI * 2); ctx.fill();
-    // ── HP bar (above boss) ──
-    const hpPct   = Math.max(0, boss.hp / boss.maxHp);
-    const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#fbbf24' : '#ef4444';
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath(); ctx.roundRect(bx - 5, by - 55, bw + 10, 16, 8); ctx.fill();
-    ctx.fillStyle = hpColor; ctx.shadowColor = hpColor; ctx.shadowBlur = 6;
-    if (hpPct > 0) { ctx.beginPath(); ctx.roundRect(bx - 3, by - 53, (bw + 6) * hpPct, 12, 6); ctx.fill(); }
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 9px Nunito, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(`HP ${Math.max(0, boss.hp)}/${boss.maxHp}`, bx + bw / 2, by - 47);
-    // ── Boss kind / world label ──
-    const kindLabel = boss.kind === 'world' ? '👑 TRÙM THẾ GIỚI' : boss.kind === 'mini' ? '⭐ TRÙM NHỎ' : (BOSS_NAMES[boss.shape] || theme.name);
-    ctx.fillStyle = boss.kind === 'world' ? '#fcd34d' : boss.kind === 'mini' ? '#fca5a5' : 'rgba(255,255,255,0.78)';
-    ctx.font = 'bold 11px Nunito, sans-serif';
-    ctx.fillText(`${kindLabel} · Màn ${level}`, bx + bw / 2, by - 70);
-    // ── Aura glow (per-world colour) ──
+    ctx.beginPath(); ctx.ellipse(bx + bw / 2, groundY + 4, bw * 0.42 * shScale * sqX, 7 * shScale, 0, 0, Math.PI * 2); ctx.fill();
+    // ── HP bar (above boss, static UI) ──
+    if (o.maxHp > 0) {
+      const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#fbbf24' : '#ef4444';
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.beginPath(); ctx.roundRect(bx - 5, by - 55, bw + 10, 16, 8); ctx.fill();
+      ctx.fillStyle = hpColor; ctx.shadowColor = hpColor; ctx.shadowBlur = 6;
+      if (hpPct > 0) { ctx.beginPath(); ctx.roundRect(bx - 3, by - 53, (bw + 6) * hpPct, 12, 6); ctx.fill(); }
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px Nunito, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(`HP ${Math.max(0, o.hp)}/${o.maxHp}`, bx + bw / 2, by - 47);
+    }
+    // ── Label (static UI) ──
+    if (o.label) {
+      ctx.fillStyle = o.labelColor || 'rgba(255,255,255,0.78)';
+      ctx.font = 'bold 11px Nunito, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(o.label, bx + bw / 2, by - 70);
+    }
+    // ── Animated body group (pivot at the feet) ──
     ctx.save();
-    ctx.globalAlpha = flash ? 0.5 : 0.2;
+    const pvx = bx + bw / 2, pvy = by + bh;
+    ctx.translate(swayX + knockX, bobY);
+    ctx.translate(pvx, pvy); ctx.rotate(tilt + leanBk); ctx.scale(breathe * sqX, breathe * sqY); ctx.translate(-pvx, -pvy);
+    // Aura glow (per-world colour; pulses faster when panicking)
+    ctx.save();
+    ctx.globalAlpha = flash ? 0.5 : (low ? 0.26 + Math.abs(Math.sin(at * 9)) * 0.16 : 0.2);
     ctx.fillStyle = theme.glow; ctx.shadowColor = theme.glow; ctx.shadowBlur = 28;
     ctx.beginPath(); ctx.roundRect(bx + 6, by + 8, bw - 12, bh - 12, 14); ctx.fill();
     ctx.restore();
-    // ── Body: a different monster each màn ──
-    switch (boss.shape) {
+    // Body: a different monster per shape
+    switch (o.shape) {
       case 'dino':    drawBossDino(bx, by, bw, bh, flash, theme); break;
       case 'lion':    drawBossLion(bx, by, bw, bh, flash, theme); break;
       case 'jet':     drawBossJet(bx, by, bw, bh, flash, theme); break;
@@ -2488,6 +2587,29 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       default:        drawBossDemon(bx, by, bw, bh, flash, theme);
     }
     ctx.restore();
+    ctx.restore();
+  }
+
+  // Expose the painter so Bắn Cung v1 can render the SAME animated, reactive
+  // boss: temporarily retarget the module `ctx` to the caller's canvas.
+  window.KTPaintBoss = function (targetCtx, o) {
+    const prev = ctx;
+    ctx = targetCtx;
+    try { paintBoss(o); } finally { ctx = prev; }
+  };
+
+  function drawBoss2() {
+    if (boss.hp <= 0) return;   // hidden while the defeat explosion plays
+    const theme      = themeOf(level);
+    const kindLabel  = boss.kind === 'world' ? '👑 TRÙM THẾ GIỚI' : boss.kind === 'mini' ? '⭐ TRÙM NHỎ' : (BOSS_NAMES[boss.shape] || theme.name);
+    const labelColor = boss.kind === 'world' ? '#fcd34d' : boss.kind === 'mini' ? '#fca5a5' : 'rgba(255,255,255,0.78)';
+    paintBoss({
+      shape: boss.shape, x: boss.x, y: boss.y, w: boss.w, h: boss.h,
+      hp: boss.hp, maxHp: boss.maxHp, theme,
+      flash: hitFlash > 0, groundY: GROUND_Y,
+      label: `${kindLabel} · Màn ${level}`, labelColor,
+      phase: level * 0.7, recoil: bossHit, lowHp: (boss.hp / boss.maxHp) < 0.3,
+    });
   }
 
   // ── Demon king (original boss) ──
