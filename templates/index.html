@@ -7,7 +7,7 @@
   <meta name="description" content="Luyện gõ Tiếng Việt cho bé – dùng Unikey hoặc Bamboo trên hệ thống" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=9" />
+  <link rel="stylesheet" href="/static/css/style.css?v=12" />
 </head>
 <body>
 
@@ -234,13 +234,17 @@
   </div>
   <div class="game-title">🧮 Bắn Cung v2 – Math Quest</div>
 
-  <div class="bow2-difficulty" id="bow2-difficulty" role="group" aria-label="Chọn độ khó">
-    <span class="bow2-diff-label">🎚️ Độ khó:</span>
-    <button type="button" class="bow2-diff-btn" data-diff="easy">😀 Dễ <small>lớp 1</small></button>
-    <button type="button" class="bow2-diff-btn active" data-diff="medium">🙂 Vừa</button>
-    <button type="button" class="bow2-diff-btn" data-diff="hard">😎 Khó</button>
-    <span class="bow2-diff-desc" id="bow2-diff-desc"></span>
-  </div>
+  <details class="bow2-diffpanel" id="bow2-diffpanel">
+    <summary>🎚️ Độ khó từng phép <span class="bow2-diff-summary" id="bow2-diff-summary"></span></summary>
+    <div class="bow2-diff-presets" id="bow2-diff-presets" role="group" aria-label="Đặt nhanh tất cả phép">
+      <span class="bow2-diff-label">Đặt nhanh:</span>
+      <button type="button" class="bow2-preset-btn" data-preset="easy">😀 Lớp 1</button>
+      <button type="button" class="bow2-preset-btn" data-preset="medium">🙂 Vừa</button>
+      <button type="button" class="bow2-preset-btn" data-preset="hard">😎 Khó</button>
+    </div>
+    <div class="bow2-op-grid" id="bow2-op-grid" role="group" aria-label="Chọn phép tính và độ khó"></div>
+    <p class="bow2-diff-hint">Bấm tên phép để bật/tắt · chọn Dễ/Vừa/Khó cho từng phép. Tắt phép bé chưa học (vd phép chia).</p>
+  </details>
 
   <canvas id="bow2-game-canvas" width="1000" height="500"></canvas>
 
@@ -255,7 +259,24 @@
       <button id="bow2-submit-btn" class="btn btn-sky">🏹 Bắn!</button>
     </div>
     <div id="bow2-feedback" class="bow2-feedback"></div>
-    <div class="bow2-stats">
+
+    <div id="bow2-keypad" class="bow2-keypad" role="group" aria-label="Bàn phím số">
+      <button type="button" class="bow2-key" data-key="1">1</button>
+      <button type="button" class="bow2-key" data-key="2">2</button>
+      <button type="button" class="bow2-key" data-key="3">3</button>
+      <button type="button" class="bow2-key" data-key="4">4</button>
+      <button type="button" class="bow2-key" data-key="5">5</button>
+      <button type="button" class="bow2-key" data-key="6">6</button>
+      <button type="button" class="bow2-key" data-key="7">7</button>
+      <button type="button" class="bow2-key" data-key="8">8</button>
+      <button type="button" class="bow2-key" data-key="9">9</button>
+      <button type="button" class="bow2-key bow2-key-del" data-key="del" aria-label="Xoá một chữ số">⌫</button>
+      <button type="button" class="bow2-key" data-key="0">0</button>
+      <button type="button" class="bow2-key bow2-key-fire" data-key="fire" aria-label="Bắn">🏹</button>
+    </div>
+
+    <button type="button" id="bow2-stats-toggle" class="bow2-stats-toggle" aria-expanded="false" aria-controls="bow2-stats">📊 Xem chỉ số nhân vật ▾</button>
+    <div class="bow2-stats" id="bow2-stats">
       <div>🗺️ Màn: <span id="bow2-level">1</span>/1000</div>
       <div>❤️ Máu: <span id="bow2-hearts">5/5</span></div>
       <div>💥 HP Boss: <span id="bow2-boss-hp">100</span></div>
@@ -1702,8 +1723,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     { name: 'Hoàng Kim', c0: '#f59e0b', c1: '#92400e', glow: '#fcd34d' },
   ];
   // ── Boss shapes rotate every màn so kids meet a new monster each level ──
-  const BOSS_SHAPES = ['demon', 'dino', 'lion', 'jet', 'robot'];
-  const BOSS_NAMES  = { demon: 'Quái Vương', dino: 'Khủng Long', lion: 'Sư Tử', jet: 'Phi Cơ Chiến Đấu', robot: 'Người Máy' };
+  const BOSS_SHAPES = ['demon', 'dino', 'lion', 'jet', 'robot', 'dragon', 'ufo', 'octopus', 'snowman'];
+  const BOSS_NAMES  = { demon: 'Quái Vương', dino: 'Khủng Long', lion: 'Sư Tử', jet: 'Phi Cơ Chiến Đấu', robot: 'Người Máy', dragon: 'Rồng Lửa', ufo: 'Đĩa Bay UFO', octopus: 'Bạch Tuộc', snowman: 'Người Tuyết' };
   function shapeForLevel(L) { return BOSS_SHAPES[(L - 1) % BOSS_SHAPES.length]; }
   function worldOf(L) { return Math.min(WORLD_THEMES.length - 1, Math.floor((L - 1) / 100)); }
   function themeOf(L) { return WORLD_THEMES[worldOf(L)]; }
@@ -1737,7 +1758,30 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   let gameState      = 'quiz';   // 'quiz' | 'shooting' | 'upgrade' | 'win' | 'final'
   let level          = 1;
   let maxLevel       = parseInt(localStorage.getItem('bow2_maxlevel') || '1');
-  let difficulty     = localStorage.getItem('bow2_difficulty') || 'medium';
+  // Per-operation difficulty: each op (+ − × ÷) can be on/off with its own level.
+  const OPS = [
+    { key: 'add', label: '➕ Cộng' },
+    { key: 'sub', label: '➖ Trừ' },
+    { key: 'mul', label: '✖️ Nhân' },
+    { key: 'div', label: '➗ Chia' },
+  ];
+  const LVL_LABEL = { easy: 'Dễ', medium: 'Vừa', hard: 'Khó' };
+  function defaultOpCfg() { return { add: { on: true, lvl: 'medium' }, sub: { on: true, lvl: 'medium' }, mul: { on: true, lvl: 'medium' }, div: { on: true, lvl: 'medium' } }; }
+  function loadOpCfg() {
+    const base = defaultOpCfg();
+    try {
+      const saved = JSON.parse(localStorage.getItem('bow2_opcfg') || '{}');
+      OPS.forEach(o => {
+        if (saved[o.key]) {
+          if (typeof saved[o.key].on === 'boolean') base[o.key].on = saved[o.key].on;
+          if (LVL_LABEL[saved[o.key].lvl]) base[o.key].lvl = saved[o.key].lvl;
+        }
+      });
+    } catch (e) { /* keep defaults */ }
+    if (!OPS.some(o => base[o.key].on)) base.add.on = true; // at least one op
+    return base;
+  }
+  let opCfg = loadOpCfg();
   let score          = 0;
   let qCount         = 0;        // total questions attempted (accuracy)
   let correctCount   = 0;        // correct answers this run
@@ -1769,34 +1813,37 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   const shotsEl     = document.getElementById('bow2-shots');
   const submitBtn2  = document.getElementById('bow2-submit-btn');
 
-  // ── Math question generator (difficulty-aware) ──
-  // easy   (lớp 1): + / − trong phạm vi 10, × bảng cửu chương 2–5 (không có chia)
-  // medium (vừa)  : + / − < 100, × và ÷ trong bảng ≤ 9×9
-  // hard   (khó)  : số 2 chữ số cho + / −, nhân/chia khó hơn
+  // ── Math question generator (per-operation difficulty) ──
+  //   add/sub  easy:≤10 · medium:<100 · hard:2 chữ số
+  //   mul      easy:bảng 2–5 · medium:≤9×9 · hard:2 chữ số × 1 chữ số
+  //   div      easy:bảng 2–5 · medium:≤9×9 · hard:tới 12
   function ri(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function genByOp(op, lvl) {
+    if (op === 'add') {
+      if (lvl === 'easy') { const a = ri(1, 9), b = ri(1, Math.max(1, 10 - a)); return { text: `${a} + ${b} = ?`, answer: a + b }; }
+      if (lvl === 'hard') { const a = ri(10, 99), b = ri(10, 99);              return { text: `${a} + ${b} = ?`, answer: a + b }; }
+      const a = ri(1, 49), b = ri(1, Math.min(49, 99 - a));                    return { text: `${a} + ${b} = ?`, answer: a + b };
+    }
+    if (op === 'sub') {
+      if (lvl === 'easy') { const a = ri(2, 10), b = ri(1, a);     return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
+      if (lvl === 'hard') { const a = ri(30, 99), b = ri(2, a - 1); return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
+      const a = ri(11, 99), b = ri(1, a - 1);                       return { text: `${a} \u2212 ${b} = ?`, answer: a - b };
+    }
+    if (op === 'mul') {
+      if (lvl === 'easy') { let f1 = ri(2, 5), f2 = ri(2, 9); if (Math.random() < 0.5) { const t = f1; f1 = f2; f2 = t; } return { text: `${f1} \u00d7 ${f2} = ?`, answer: f1 * f2 }; }
+      if (lvl === 'hard') { const a = ri(11, 29), b = ri(2, 9);                                                          return { text: `${a} \u00d7 ${b} = ?`, answer: a * b }; }
+      const a = ri(1, 9), b = ri(1, 9);                                                                                  return { text: `${a} \u00d7 ${b} = ?`, answer: a * b };
+    }
+    // division (always exact, derived from a product)
+    if (lvl === 'easy') { const d = ri(2, 5), q = ri(2, 5);  return { text: `${d * q} \u00f7 ${d} = ?`, answer: q }; }
+    if (lvl === 'hard') { const d = ri(2, 12), q = ri(2, 12); return { text: `${d * q} \u00f7 ${d} = ?`, answer: q }; }
+    const d = ri(1, 9), q = ri(1, 9);                         return { text: `${d * q} \u00f7 ${d} = ?`, answer: q };
+  }
   function generateQuestion() {
-    if (difficulty === 'easy') {
-      const op = ['+', '-', 'x'][Math.floor(Math.random() * 3)];
-      if (op === '+') { const a = ri(1, 9), b = ri(1, Math.max(1, 10 - a)); return { text: `${a} + ${b} = ?`, answer: a + b }; }
-      if (op === '-') { const a = ri(2, 10), b = ri(1, a);                  return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
-      // multiplication using the 2–5 times tables
-      let f1 = ri(2, 5), f2 = ri(2, 9);
-      if (Math.random() < 0.5) { const t = f1; f1 = f2; f2 = t; }
-      return { text: `${f1} \u00d7 ${f2} = ?`, answer: f1 * f2 };
-    }
-    if (difficulty === 'hard') {
-      const opIdx = Math.floor(Math.random() * 4);
-      if (opIdx === 0) { const a = ri(10, 99), b = ri(10, 99);   return { text: `${a} + ${b} = ?`, answer: a + b }; }
-      if (opIdx === 1) { const a = ri(30, 99), b = ri(2, a - 1); return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
-      if (opIdx === 2) { const a = ri(11, 29), b = ri(2, 9);     return { text: `${a} \u00d7 ${b} = ?`, answer: a * b }; }
-      const b = ri(2, 12), q = ri(2, 12);                        return { text: `${b * q} \u00f7 ${b} = ?`, answer: q };
-    }
-    // ── medium (default) ──
-    const opIdx = Math.floor(Math.random() * 4);
-    if (opIdx === 0) { const a = ri(1, 49), b = ri(1, Math.min(49, 99 - a)); return { text: `${a} + ${b} = ?`, answer: a + b }; }
-    if (opIdx === 1) { const a = ri(11, 99), b = ri(1, a - 1);              return { text: `${a} \u2212 ${b} = ?`, answer: a - b }; }
-    if (opIdx === 2) { const a = ri(1, 9), b = ri(1, 9);                    return { text: `${a} \u00d7 ${b} = ?`, answer: a * b }; }
-    const b = ri(1, 9), q = ri(1, 9);                                      return { text: `${b * q} \u00f7 ${b} = ?`, answer: q };
+    const enabled = OPS.map(o => o.key).filter(k => opCfg[k].on);
+    const pool = enabled.length ? enabled : ['add'];
+    const op = pool[Math.floor(Math.random() * pool.length)];
+    return genByOp(op, opCfg[op].lvl);
   }
 
   // ── Auto-aim: compute launch speed v0 for exact hit at boss center ──
@@ -1891,6 +1938,8 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
   function setInputEnabled(enabled) {
     answerEl.disabled  = !enabled;
     submitBtn2.disabled = !enabled;
+    const kp = document.getElementById('bow2-keypad');
+    if (kp) kp.querySelectorAll('.bow2-key').forEach(b => { b.disabled = !enabled; });
     if (enabled) setTimeout(() => answerEl.focus(), 50);
   }
 
@@ -2428,11 +2477,15 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.restore();
     // ── Body: a different monster each màn ──
     switch (boss.shape) {
-      case 'dino':  drawBossDino(bx, by, bw, bh, flash, theme); break;
-      case 'lion':  drawBossLion(bx, by, bw, bh, flash, theme); break;
-      case 'jet':   drawBossJet(bx, by, bw, bh, flash, theme); break;
-      case 'robot': drawBossRobot(bx, by, bw, bh, flash, theme); break;
-      default:      drawBossDemon(bx, by, bw, bh, flash, theme);
+      case 'dino':    drawBossDino(bx, by, bw, bh, flash, theme); break;
+      case 'lion':    drawBossLion(bx, by, bw, bh, flash, theme); break;
+      case 'jet':     drawBossJet(bx, by, bw, bh, flash, theme); break;
+      case 'robot':   drawBossRobot(bx, by, bw, bh, flash, theme); break;
+      case 'dragon':  drawBossDragon(bx, by, bw, bh, flash, theme); break;
+      case 'ufo':     drawBossUfo(bx, by, bw, bh, flash, theme); break;
+      case 'octopus': drawBossOctopus(bx, by, bw, bh, flash, theme); break;
+      case 'snowman': drawBossSnowman(bx, by, bw, bh, flash, theme); break;
+      default:        drawBossDemon(bx, by, bw, bh, flash, theme);
     }
     ctx.restore();
   }
@@ -2738,6 +2791,200 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     ctx.restore();
   }
 
+  // ── Rồng lửa (dragon) ──
+  function drawBossDragon(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh;
+    const main = flash ? '#ffffff' : '#7c3aed';
+    const dark = flash ? '#e5e7eb' : '#5b21b6';
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Wings (behind body)
+    ctx.fillStyle = flash ? '#cbd5e1' : '#4c1d95';
+    ctx.beginPath();
+    ctx.moveTo(bx + 30, by + 46); ctx.lineTo(bx - 6, by + 24); ctx.lineTo(bx + 4, by + 50);
+    ctx.lineTo(bx - 4, by + 64); ctx.lineTo(bx + 10, by + 64); ctx.lineTo(bx + 18, by + 78);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(bx + bw - 30, by + 46); ctx.lineTo(bx + bw + 6, by + 24); ctx.lineTo(bx + bw - 4, by + 50);
+    ctx.lineTo(bx + bw + 4, by + 64); ctx.lineTo(bx + bw - 10, by + 64); ctx.lineTo(bx + bw - 18, by + 78);
+    ctx.closePath(); ctx.fill();
+    // Tail with spade tip
+    ctx.strokeStyle = dark; ctx.lineWidth = 12; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx, bottom - 10); ctx.quadraticCurveTo(bx + 4, bottom - 4, bx + 2, bottom - 28); ctx.stroke();
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath(); ctx.moveTo(bx + 2, bottom - 40); ctx.lineTo(bx - 6, bottom - 26); ctx.lineTo(bx + 10, bottom - 26); ctx.closePath(); ctx.fill();
+    // Body
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 24 : 10;
+    const g = ctx.createLinearGradient(bx, by, bx + bw, bottom);
+    g.addColorStop(0, main); g.addColorStop(1, dark);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(bx + 22, by + 30, 46, bh - 36, 20); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Belly
+    ctx.fillStyle = flash ? '#f3f4f6' : '#c4b5fd';
+    ctx.beginPath(); ctx.ellipse(cx, by + 92, 15, 26, 0, 0, Math.PI * 2); ctx.fill();
+    // Spine ridges
+    ctx.fillStyle = '#facc15';
+    for (let i = 0; i < 4; i++) { const sk = cx - 18 + i * 12; ctx.beginPath(); ctx.moveTo(sk, by + 32); ctx.lineTo(sk + 8, by + 32); ctx.lineTo(sk + 4, by + 18); ctx.closePath(); ctx.fill(); }
+    // Horns
+    ctx.fillStyle = flash ? '#fde68a' : '#fde68a';
+    ctx.beginPath(); ctx.moveTo(bx + 28, by + 34); ctx.lineTo(bx + 18, by + 14); ctx.lineTo(bx + 36, by + 30); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(bx + bw - 28, by + 34); ctx.lineTo(bx + bw - 18, by + 14); ctx.lineTo(bx + bw - 36, by + 30); ctx.closePath(); ctx.fill();
+    // Snout (faces player) + fire
+    ctx.fillStyle = main;
+    ctx.beginPath(); ctx.roundRect(bx + 8, by + 56, 22, 16, 8); ctx.fill();
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath(); ctx.arc(bx + 12, by + 60, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath(); ctx.moveTo(bx + 8, by + 66); ctx.lineTo(bx - 12, by + 64); ctx.lineTo(bx - 4, by + 69); ctx.lineTo(bx - 16, by + 70); ctx.lineTo(bx + 8, by + 72); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fde047';
+    ctx.beginPath(); ctx.moveTo(bx + 8, by + 67); ctx.lineTo(bx - 6, by + 68); ctx.lineTo(bx + 8, by + 70); ctx.closePath(); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(bx + 36, by + 48, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 56, by + 48, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath(); ctx.arc(bx + 37, by + 49, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx + 55, by + 49, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ── Đĩa bay UFO ──
+  function drawBossUfo(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh, sy = by + 76;
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Tractor beam
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#a7f3d0';
+    ctx.beginPath(); ctx.moveTo(cx - 16, sy + 6); ctx.lineTo(cx + 16, sy + 6); ctx.lineTo(cx + 34, bottom); ctx.lineTo(cx - 34, bottom); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    // Dome
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 22 : 10;
+    ctx.fillStyle = flash ? '#ffffff' : 'rgba(125,211,252,0.85)';
+    ctx.beginPath(); ctx.ellipse(cx, sy - 6, 24, 24, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Alien inside
+    ctx.fillStyle = flash ? '#d1fae5' : '#4ade80';
+    ctx.beginPath(); ctx.ellipse(cx, sy - 6, 11, 13, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(cx - 11, sy - 8, 22, 8, 3); ctx.fill();
+    ctx.strokeStyle = flash ? '#d1fae5' : '#4ade80'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 6, sy - 18); ctx.lineTo(cx - 9, sy - 26); ctx.moveTo(cx + 6, sy - 18); ctx.lineTo(cx + 9, sy - 26); ctx.stroke();
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(cx - 9, sy - 26, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 9, sy - 26, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx - 4, sy - 8, 2.4, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 4, sy - 8, 2.4, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+    // Saucer body
+    const g = ctx.createLinearGradient(bx, sy - 8, bx, sy + 14);
+    g.addColorStop(0, flash ? '#ffffff' : '#cbd5e1'); g.addColorStop(1, flash ? '#e5e7eb' : '#64748b');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(cx, sy + 4, 44, 15, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = flash ? '#e5e7eb' : '#475569';
+    ctx.beginPath(); ctx.ellipse(cx, sy + 10, 30, 8, 0, 0, Math.PI); ctx.fill();
+    // Rim lights (blink)
+    const t = Math.floor(Date.now() / 200);
+    const cols = ['#ef4444', '#facc15', '#22d3ee', '#a855f7', '#4ade80'];
+    for (let i = 0; i < 5; i++) {
+      const lx = cx - 32 + i * 16;
+      ctx.fillStyle = cols[(i + t) % cols.length];
+      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(lx, sy + 6, 3.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  // ── Bạch tuộc (octopus) ──
+  function drawBossOctopus(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh, headY = by + 52;
+    const main = flash ? '#ffffff' : '#ec4899';
+    const dark = flash ? '#e5e7eb' : '#be185d';
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Tentacles
+    const wig = Math.sin(Date.now() / 300) * 4;
+    for (let i = 0; i < 7; i++) {
+      const tx = bx + 12 + i * ((bw - 24) / 6);
+      const dir = i % 2 === 0 ? 1 : -1;
+      ctx.strokeStyle = i % 2 === 0 ? main : dark; ctx.lineWidth = 8; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(tx, by + 86);
+      ctx.quadraticCurveTo(tx + dir * 8, by + 104, tx + dir * (4 + wig), bottom - 4); ctx.stroke();
+    }
+    // Head / mantle
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 24 : 12;
+    const g = ctx.createLinearGradient(bx, by, bx, by + 100);
+    g.addColorStop(0, main); g.addColorStop(1, dark);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(cx, headY, 38, 44, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Cheeks
+    ctx.fillStyle = 'rgba(248,113,113,0.5)';
+    ctx.beginPath(); ctx.arc(cx - 24, headY + 12, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 24, headY + 12, 7, 0, Math.PI * 2); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 14, headY - 6, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 14, headY - 6, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(cx - 12, headY - 4, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 16, headY - 4, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(cx - 14, headY - 7, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 14, headY - 7, 1.8, 0, Math.PI * 2); ctx.fill();
+    // Smile
+    ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(cx, headY + 12, 9, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Người tuyết (snowman) ──
+  function drawBossSnowman(bx, by, bw, bh, flash, theme) {
+    const cx = bx + bw / 2, bottom = by + bh;
+    const snow = flash ? '#ffffff' : '#f8fafc';
+    const sh   = flash ? '#e5e7eb' : '#cbd5e1';
+    const headY = by + 40, midY = bottom - 56, botY = bottom - 20;
+    ctx.save();
+    ctx.lineJoin = 'round';
+    // Stick arms
+    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx - 18, midY); ctx.lineTo(cx - 40, midY - 12); ctx.moveTo(cx - 30, midY - 6); ctx.lineTo(cx - 34, midY - 16); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 18, midY); ctx.lineTo(cx + 40, midY - 12); ctx.moveTo(cx + 30, midY - 6); ctx.lineTo(cx + 34, midY - 16); ctx.stroke();
+    // Snow balls
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = flash ? 22 : 10;
+    function ball(y, r) { const g = ctx.createRadialGradient(cx - r * 0.3, y - r * 0.3, r * 0.2, cx, y, r); g.addColorStop(0, snow); g.addColorStop(1, sh); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, y, r, 0, Math.PI * 2); ctx.fill(); }
+    ball(botY, 26); ball(midY, 21); ball(headY, 17);
+    ctx.shadowBlur = 0;
+    // Buttons (coal)
+    ctx.fillStyle = '#1e293b';
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(cx, midY - 10 + i * 10, 2.6, 0, Math.PI * 2); ctx.fill(); }
+    // Eyes
+    ctx.beginPath(); ctx.arc(cx - 6, headY - 3, 2.8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 6, headY - 3, 2.8, 0, Math.PI * 2); ctx.fill();
+    // Carrot nose (points at player → left)
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath(); ctx.moveTo(cx - 2, headY + 2); ctx.lineTo(cx - 18, headY + 5); ctx.lineTo(cx - 2, headY + 7); ctx.closePath(); ctx.fill();
+    // Smile (coal dots)
+    ctx.fillStyle = '#1e293b';
+    for (let i = 0; i < 5; i++) { const a = (0.2 + i * 0.15) * Math.PI; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * 10, headY + 6 + Math.sin(a) * 6, 1.4, 0, Math.PI * 2); ctx.fill(); }
+    // Cheeks
+    ctx.fillStyle = 'rgba(248,113,113,0.55)';
+    ctx.beginPath(); ctx.arc(cx - 11, headY + 4, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 11, headY + 4, 4, 0, Math.PI * 2); ctx.fill();
+    // Scarf
+    ctx.fillStyle = flash ? '#fca5a5' : '#ef4444';
+    ctx.beginPath(); ctx.roundRect(cx - 16, headY + 14, 32, 8, 4); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(cx + 6, headY + 16, 8, 22, 3); ctx.fill();
+    // Top hat
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.roundRect(cx - 20, by + 22, 40, 6, 2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(cx - 13, by + 2, 26, 22, 3); ctx.fill();
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.roundRect(cx - 13, by + 18, 26, 5, 2); ctx.fill();
+    ctx.restore();
+  }
+
   function drawArrow2() {
     ctx.save();
     ctx.translate(arrow.x, arrow.y);
@@ -2803,25 +3050,13 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
     if (raf) { cancelAnimationFrame(raf); raf = null; }
   }
 
-  // ── Difficulty selector ──
-  const diffWrap   = document.getElementById('bow2-difficulty');
-  const diffDescEl = document.getElementById('bow2-diff-desc');
-  const DIFF_DESC  = {
-    easy:   '😀 Lớp 1: cộng/trừ trong 10 · nhân bảng cửu chương 2–5',
-    medium: '🙂 Vừa: cộng/trừ < 100 · nhân & chia trong bảng ≤ 9',
-    hard:   '😎 Khó: số 2 chữ số · nhân/chia khó hơn',
-  };
-  function applyDifficultyUI() {
-    if (diffWrap) diffWrap.querySelectorAll('.bow2-diff-btn').forEach(b => b.classList.toggle('active', b.dataset.diff === difficulty));
-    if (diffDescEl) diffDescEl.textContent = DIFF_DESC[difficulty] || '';
-  }
-  function setDifficulty(d) {
-    if (!DIFF_DESC[d]) return;
-    difficulty = d;
-    localStorage.setItem('bow2_difficulty', d);
-    applyDifficultyUI();
-    if (window.Sfx) Sfx.upgrade();
-    // Apply immediately to the current question while playing
+  // ── Per-operation difficulty panel ──
+  const opGrid    = document.getElementById('bow2-op-grid');
+  const diffSumEl = document.getElementById('bow2-diff-summary');
+  const presetWrap = document.getElementById('bow2-diff-presets');
+
+  function saveOpCfg() { localStorage.setItem('bow2_opcfg', JSON.stringify(opCfg)); }
+  function refreshOnQuiz() {
     if (gameState === 'quiz') {
       currentQuestion = generateQuestion();
       questionEl.textContent = currentQuestion.text;
@@ -2830,12 +3065,90 @@ document.getElementById('bow2-restart-btn').addEventListener('click', () => {
       if (answerEl.focus) answerEl.focus();
     }
   }
-  if (diffWrap) {
-    diffWrap.querySelectorAll('.bow2-diff-btn').forEach(b => {
-      b.addEventListener('click', () => setDifficulty(b.dataset.diff));
+  function refreshDiffUI() {
+    if (opGrid) {
+      opGrid.querySelectorAll('.bow2-op-card').forEach(card => {
+        const k = card.dataset.op, on = opCfg[k].on;
+        card.classList.toggle('off', !on);
+        const tog = card.querySelector('.bow2-op-toggle');
+        if (tog) tog.setAttribute('aria-pressed', String(on));
+        card.querySelectorAll('.bow2-op-lvl').forEach(b => b.classList.toggle('active', on && b.dataset.lvl === opCfg[k].lvl));
+      });
+    }
+    if (diffSumEl) {
+      diffSumEl.textContent = OPS.filter(o => opCfg[o.key].on)
+        .map(o => `${o.label.split(' ')[0]}${LVL_LABEL[opCfg[o.key].lvl]}`).join(' · ');
+    }
+  }
+  function toggleOp(k) {
+    const enabledCount = OPS.filter(o => opCfg[o.key].on).length;
+    if (opCfg[k].on && enabledCount <= 1) return; // keep at least one op on
+    opCfg[k].on = !opCfg[k].on;
+    saveOpCfg(); refreshDiffUI(); if (window.Sfx) Sfx.upgrade(); refreshOnQuiz();
+  }
+  function setOpLevel(k, lvl) {
+    opCfg[k].lvl = lvl; opCfg[k].on = true;
+    saveOpCfg(); refreshDiffUI(); if (window.Sfx) Sfx.upgrade(); refreshOnQuiz();
+  }
+  function applyPreset(p) {
+    OPS.forEach(o => { opCfg[o.key].lvl = p; opCfg[o.key].on = true; });
+    if (p === 'easy') opCfg.div.on = false; // lớp 1 thường chưa học chia
+    saveOpCfg(); refreshDiffUI(); if (window.Sfx) Sfx.win(); refreshOnQuiz();
+  }
+  function buildDiffPanel() {
+    if (!opGrid) return;
+    opGrid.innerHTML = '';
+    OPS.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'bow2-op-card'; card.dataset.op = o.key;
+      const tog = document.createElement('button');
+      tog.type = 'button'; tog.className = 'bow2-op-toggle'; tog.textContent = o.label;
+      tog.title = 'Bật/tắt phép này';
+      tog.addEventListener('click', () => toggleOp(o.key));
+      const lvls = document.createElement('div');
+      lvls.className = 'bow2-op-levels';
+      ['easy', 'medium', 'hard'].forEach(lvl => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'bow2-op-lvl'; b.dataset.lvl = lvl; b.textContent = LVL_LABEL[lvl];
+        b.addEventListener('click', () => setOpLevel(o.key, lvl));
+        lvls.appendChild(b);
+      });
+      card.appendChild(tog); card.appendChild(lvls);
+      opGrid.appendChild(card);
     });
   }
-  applyDifficultyUI();
+  if (presetWrap) presetWrap.querySelectorAll('.bow2-preset-btn').forEach(b => b.addEventListener('click', () => applyPreset(b.dataset.preset)));
+  buildDiffPanel();
+  refreshDiffUI();
+
+  // ── Touch UX: on-screen numeric keypad + collapsible stats ──
+  const isTouch = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
+  if (isTouch) {
+    document.body.classList.add('kt-touch');
+    answerEl.readOnly = true;                  // suppress the OS keyboard…
+    answerEl.setAttribute('inputmode', 'none'); // …and let our keypad drive input
+  }
+  const keypad = document.getElementById('bow2-keypad');
+  if (keypad) {
+    keypad.addEventListener('click', (e) => {
+      const k = e.target.closest('.bow2-key');
+      if (!k || k.disabled) return;
+      const key = k.dataset.key;
+      if (key === 'fire') { onSubmit(); return; }
+      if (answerEl.disabled) return;
+      if (key === 'del') answerEl.value = answerEl.value.slice(0, -1);
+      else if (answerEl.value.length < 6) answerEl.value += key;
+    });
+  }
+  const statsToggle = document.getElementById('bow2-stats-toggle');
+  const statsBox    = document.getElementById('bow2-stats');
+  if (statsToggle && statsBox) {
+    statsToggle.addEventListener('click', () => {
+      const show = statsBox.classList.toggle('show');
+      statsToggle.setAttribute('aria-expanded', String(show));
+      statsToggle.textContent = show ? '📊 Ẩn chỉ số nhân vật ▴' : '📊 Xem chỉ số nhân vật ▾';
+    });
+  }
 
   window.bow2GameStart = bow2GameStart;
   window.bow2GameStop  = bow2GameStop;

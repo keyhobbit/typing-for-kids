@@ -774,45 +774,137 @@ footer {
 }
 .bow2-stats span { color: var(--text); }
 
-/* ---------- Bow Game v2 difficulty selector ---------- */
-.bow2-difficulty {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: .5rem .6rem;
-  width: 100%;
-  justify-content: center;
+/* ---------- Bow Game v2 on-screen numeric keypad (touch) ---------- */
+.bow2-keypad { display: none; }
+body.kt-touch .bow2-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5rem;
+  width: min(330px, 94%);
+  margin: .7rem auto 0;
 }
-.bow2-diff-label { font-weight: 800; color: var(--text); font-size: .95rem; }
-.bow2-diff-btn {
+.bow2-key {
+  font-family: var(--font);
+  font-weight: 800;
+  font-size: 1.5rem;
   border: 2px solid #cbd5e1;
   background: var(--card);
   color: var(--text);
-  border-radius: 999px;
-  padding: .4rem .9rem;
-  font-family: var(--font);
-  font-weight: 700;
-  font-size: .9rem;
+  border-radius: 14px;
+  padding: .5rem 0;
+  min-height: 54px;
   cursor: pointer;
-  transition: transform .1s, border-color .1s, background .1s, color .1s;
+  box-shadow: 0 3px 0 #cbd5e1;
+  transition: transform .06s, box-shadow .06s, background .1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
-.bow2-diff-btn small { font-weight: 600; opacity: .7; font-size: .72rem; }
-.bow2-diff-btn:hover { transform: translateY(-1px); border-color: var(--sky); }
-.bow2-diff-btn.active {
-  background: var(--sky);
-  border-color: var(--sky);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(56,189,248,.35);
+.bow2-key:active { transform: translateY(3px); box-shadow: 0 0 0 #cbd5e1; background: #e0f2fe; }
+.bow2-key-del { color: var(--red); border-color: #fecaca; box-shadow: 0 3px 0 #fecaca; }
+.bow2-key-fire { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 3px 0 #15803d; }
+.bow2-key-fire:active { background: #16a34a; box-shadow: 0 0 0 #15803d; }
+.bow2-key:disabled { opacity: .45; box-shadow: none; cursor: default; }
+/* On touch the keypad is the input method: hide the standalone button, tame the field */
+body.kt-touch #bow2-submit-btn { display: none; }
+body.kt-touch .bow2-answer-input { text-align: center; caret-color: transparent; width: 150px; }
+
+/* ---------- Bow Game v2 stats collapse (mobile) ---------- */
+.bow2-stats-toggle { display: none; }
+@media (max-width: 640px) {
+  .bow2-stats-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin: .6rem auto 0;
+    border: 2px solid #cbd5e1;
+    background: var(--card);
+    color: var(--text);
+    border-radius: 999px;
+    padding: .4rem 1rem;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: .9rem;
+    cursor: pointer;
+  }
+  .bow2-stats { display: none; }
+  .bow2-stats.show { display: flex; }
 }
-.bow2-diff-desc {
-  flex-basis: 100%;
-  text-align: center;
-  font-size: .82rem;
-  color: var(--muted);
+
+/* ---------- Bow Game v2 per-operation difficulty panel ---------- */
+.bow2-diffpanel {
+  width: min(640px, 96%);
+  background: var(--card);
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: .35rem .9rem;
 }
+.bow2-diffpanel > summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--text);
+  list-style: none;
+  padding: .35rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .6rem;
+}
+.bow2-diffpanel > summary::-webkit-details-marker { display: none; }
+.bow2-diffpanel > summary::before { content: '▸'; color: var(--sky); transition: transform .15s; }
+.bow2-diffpanel[open] > summary::before { transform: rotate(90deg); }
+.bow2-diff-summary { font-weight: 600; font-size: .8rem; color: var(--muted); }
+.bow2-diff-presets {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: .4rem .5rem; margin: .5rem 0;
+}
+.bow2-diff-label { font-weight: 800; color: var(--text); font-size: .9rem; }
+.bow2-preset-btn {
+  border: 2px solid #cbd5e1; background: var(--bg); color: var(--text);
+  border-radius: 999px; padding: .3rem .8rem;
+  font-family: var(--font); font-weight: 700; font-size: .85rem; cursor: pointer;
+  transition: transform .1s, border-color .1s, background .1s;
+}
+.bow2-preset-btn:hover { transform: translateY(-1px); border-color: var(--sun); }
+.bow2-op-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .5rem;
+}
+.bow2-op-card {
+  border: 2px solid #e2e8f0; border-radius: 12px;
+  padding: .4rem .5rem;
+  display: flex; flex-direction: column; gap: .35rem;
+  background: var(--bg);
+  transition: border-color .12s, opacity .12s;
+}
+.bow2-op-card.off { opacity: .5; }
+.bow2-op-toggle {
+  border: 2px solid var(--green); background: var(--green); color: #fff;
+  border-radius: 999px; padding: .25rem .6rem;
+  font-family: var(--font); font-weight: 800; font-size: .92rem; cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.bow2-op-card.off .bow2-op-toggle {
+  background: var(--card); color: var(--muted); border-color: #cbd5e1;
+  text-decoration: line-through;
+}
+.bow2-op-levels { display: flex; gap: .3rem; }
+.bow2-op-lvl {
+  flex: 1; border: 2px solid #cbd5e1; background: var(--card); color: var(--text);
+  border-radius: 8px; padding: .25rem 0;
+  font-family: var(--font); font-weight: 700; font-size: .82rem; cursor: pointer;
+  transition: background .1s, border-color .1s, color .1s;
+}
+.bow2-op-lvl:hover { border-color: var(--sky); }
+.bow2-op-lvl.active {
+  background: var(--sky); border-color: var(--sky); color: #fff;
+  box-shadow: 0 2px 8px rgba(56,189,248,.3);
+}
+.bow2-diff-hint { margin: .55rem 0 .2rem; font-size: .78rem; color: var(--muted); text-align: center; }
 @media (max-width: 560px) {
-  .bow2-diff-btn { padding: .35rem .6rem; font-size: .82rem; }
-  .bow2-diff-label { font-size: .85rem; }
+  .bow2-op-grid { grid-template-columns: 1fr; }
+  .bow2-op-toggle { font-size: .85rem; }
 }
 
 /* ---------- Bow Game v2 upgrade overlay (Archero-style) ---------- */
